@@ -41,7 +41,8 @@
                         class="block appearance-none w-full bg-white border border-gray-400 hover:border-gray-500 px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline">
                         <option value="">No Association Selected</option>
                         {% for assoc in associations %}
-                        <option value="{{ assoc.id }}" {% if user.profile.association.id == assoc.id %}selected{% endif %}>
+                        <option value="{{ assoc.id }}" {% if user.profile.association.id==assoc.id %}selected{% endif
+                            %}>
                             {{ assoc.name }} (Required Days: {{ assoc.required_days }})
                         </option>
                         {% endfor %}
@@ -180,7 +181,8 @@
                                             onchange="toggleInlineCustomGrade({{ student.id }})"
                                             class="shadow border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm">
                                             {% for code, name in grade_choices %}
-                                            <option value="{{ code }}" {% if student.grade_level == code %}selected{% endif %}>{{ name }}</option>
+                                            <option value="{{ code }}" {% if student.grade_level==code %}selected{%
+                                                endif %}>{{ name }}</option>
                                             {% endfor %}
                                         </select>
                                         <div id="custom_grade_container_{{ student.id }}" class="mt-2"
@@ -199,18 +201,30 @@
                                             Start</label>
                                         <select name="academic_year_start_month"
                                             class="shadow border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm">
-                                            <option value="1" {% if student.academic_year_start_month == 1 %}selected{% endif %}>January</option>
-                                            <option value="2" {% if student.academic_year_start_month == 2 %}selected{% endif %}>February</option>
-                                            <option value="3" {% if student.academic_year_start_month == 3 %}selected{% endif %}>March</option>
-                                            <option value="4" {% if student.academic_year_start_month == 4 %}selected{% endif %}>April</option>
-                                            <option value="5" {% if student.academic_year_start_month == 5 %}selected{% endif %}>May</option>
-                                            <option value="6" {% if student.academic_year_start_month == 6 %}selected{% endif %}>June</option>
-                                            <option value="7" {% if student.academic_year_start_month == 7 %}selected{% endif %}>July</option>
-                                            <option value="8" {% if student.academic_year_start_month == 8 %}selected{% endif %}>August</option>
-                                            <option value="9" {% if student.academic_year_start_month == 9 %}selected{% endif %}>September</option>
-                                            <option value="10" {% if student.academic_year_start_month == 10 %}selected{% endif %}>October</option>
-                                            <option value="11" {% if student.academic_year_start_month == 11 %}selected{% endif %}>November</option>
-                                            <option value="12" {% if student.academic_year_start_month == 12 %}selected{% endif %}>December</option>
+                                            <option value="1" {% if student.academic_year_start_month==1 %}selected{%
+                                                endif %}>January</option>
+                                            <option value="2" {% if student.academic_year_start_month==2 %}selected{%
+                                                endif %}>February</option>
+                                            <option value="3" {% if student.academic_year_start_month==3 %}selected{%
+                                                endif %}>March</option>
+                                            <option value="4" {% if student.academic_year_start_month==4 %}selected{%
+                                                endif %}>April</option>
+                                            <option value="5" {% if student.academic_year_start_month==5 %}selected{%
+                                                endif %}>May</option>
+                                            <option value="6" {% if student.academic_year_start_month==6 %}selected{%
+                                                endif %}>June</option>
+                                            <option value="7" {% if student.academic_year_start_month==7 %}selected{%
+                                                endif %}>July</option>
+                                            <option value="8" {% if student.academic_year_start_month==8 %}selected{%
+                                                endif %}>August</option>
+                                            <option value="9" {% if student.academic_year_start_month==9 %}selected{%
+                                                endif %}>September</option>
+                                            <option value="10" {% if student.academic_year_start_month==10 %}selected{%
+                                                endif %}>October</option>
+                                            <option value="11" {% if student.academic_year_start_month==11 %}selected{%
+                                                endif %}>November</option>
+                                            <option value="12" {% if student.academic_year_start_month==12 %}selected{%
+                                                endif %}>December</option>
                                         </select>
                                     </div>
                                     <div>
@@ -218,18 +232,30 @@
                                             End</label>
                                         <select name="academic_year_end_month"
                                             class="shadow border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm">
-                                            <option value="1" {% if student.academic_year_end_month == 1 %}selected{% endif %}>January</option>
-                                            <option value="2" {% if student.academic_year_end_month == 2 %}selected{% endif %}>February</option>
-                                            <option value="3" {% if student.academic_year_end_month == 3 %}selected{% endif %}>March</option>
-                                            <option value="4" {% if student.academic_year_end_month == 4 %}selected{% endif %}>April</option>
-                                            <option value="5" {% if student.academic_year_end_month == 5 %}selected{% endif %}>May</option>
-                                            <option value="6" {% if student.academic_year_end_month == 6 %}selected{% endif %}>June</option>
-                                            <option value="7" {% if student.academic_year_end_month == 7 %}selected{% endif %}>July</option>
-                                            <option value="8" {% if student.academic_year_end_month == 8 %}selected{% endif %}>August</option>
-                                            <option value="9" {% if student.academic_year_end_month == 9 %}selected{% endif %}>September</option>
-                                            <option value="10" {% if student.academic_year_end_month == 10 %}selected{% endif %}>October</option>
-                                            <option value="11" {% if student.academic_year_end_month == 11 %}selected{% endif %}>November</option>
-                                            <option value="12" {% if student.academic_year_end_month == 12 %}selected{% endif %}>December</option>
+                                            <option value="1" {% if student.academic_year_end_month==1 %}selected{%
+                                                endif %}>January</option>
+                                            <option value="2" {% if student.academic_year_end_month==2 %}selected{%
+                                                endif %}>February</option>
+                                            <option value="3" {% if student.academic_year_end_month==3 %}selected{%
+                                                endif %}>March</option>
+                                            <option value="4" {% if student.academic_year_end_month==4 %}selected{%
+                                                endif %}>April</option>
+                                            <option value="5" {% if student.academic_year_end_month==5 %}selected{%
+                                                endif %}>May</option>
+                                            <option value="6" {% if student.academic_year_end_month==6 %}selected{%
+                                                endif %}>June</option>
+                                            <option value="7" {% if student.academic_year_end_month==7 %}selected{%
+                                                endif %}>July</option>
+                                            <option value="8" {% if student.academic_year_end_month==8 %}selected{%
+                                                endif %}>August</option>
+                                            <option value="9" {% if student.academic_year_end_month==9 %}selected{%
+                                                endif %}>September</option>
+                                            <option value="10" {% if student.academic_year_end_month==10 %}selected{%
+                                                endif %}>October</option>
+                                            <option value="11" {% if student.academic_year_end_month==11 %}selected{%
+                                                endif %}>November</option>
+                                            <option value="12" {% if student.academic_year_end_month==12 %}selected{%
+                                                endif %}>December</option>
                                         </select>
                                     </div>
                                 </div>
@@ -519,7 +545,7 @@
         document.getElementById('view-student').innerText = studentName;
 
         const notesObj = document.getElementById('view-notes');
-        if (notes && notes.trim()! == "") {
+        if (notes && notes.trim() !== "") {
             notesObj.innerText = notes;
             notesObj.classList.remove('italic');
         } else {
@@ -528,7 +554,7 @@
         }
 
         const subjectsObj = document.getElementById('view-subjects');
-        if (subjects && subjects.trim()! == "") {
+        if (subjects && subjects.trim() !== "") {
             subjectsObj.innerText = subjects;
             subjectsObj.classList.remove('italic');
         } else {
