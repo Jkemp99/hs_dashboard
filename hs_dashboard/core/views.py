@@ -601,24 +601,23 @@ def download_report(request):
             start_date = date(start_year, start_month, 1)
             end_date = date(end_year, end_month, last_day)
 
-    # 3. Prepare Data Context via Service
-    context = prepare_compliance_data(student, start_date, end_date)
+    # 3. Call Async Task (Synchronously for now)
+    # TODO: Switch to .delay() once Redis is fully configured
+    from core.tasks import async_generate_report
     
-    # 4. Handle Preview Mode
-    if request.GET.get('preview'):
-        return render(request, 'pdfs/attendance_report.html', context)
-    
-    # 5. Generate PDF
-    from core.utils import render_to_pdf
-    
-    pdf = render_to_pdf('pdfs/attendance_report.html', context)
-    if pdf:
-        safe_name = slugify(student.name)
-        filename = f"Compliance_Record_{safe_name}_{academic_year_label}.pdf"
-        pdf['Content-Disposition'] = f'attachment; filename="{filename}"'
-        return pdf
+    try:
+        pdf_content = async_generate_report(student.id, str(start_date), str(end_date))
         
-    return HttpResponse("Error generating PDF", status=500)
+        if pdf_content:
+            response = HttpResponse(pdf_content, content_type='application/pdf')
+            safe_name = slugify(student.name)
+            filename = f"Compliance_Record_{safe_name}_{academic_year_label}.pdf"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+            
+        return HttpResponse("Error generating PDF: No content returned", status=500)
+    except Exception as e:
+        return HttpResponse(f"Error generating PDF: {str(e)}", status=500)
 
 
 @login_required

@@ -1,0 +1,5 @@
+Django>=4.2.0
+fpdf2
+xhtml2pdf
+celery
+redis

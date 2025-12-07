@@ -16,15 +16,24 @@ def prepare_compliance_data(student, start_date, end_date):
         dict: Context dictionary including 'months_data', 'stats', 'subjects', 'student_info'.
     """
     
+    # Parse dates if they are strings (from Celery task)
+    if isinstance(start_date, str):
+        start_date = date.fromisoformat(start_date)
+    if isinstance(end_date, str):
+        end_date = date.fromisoformat(end_date)
+
     # 1. Fetch all relevant school days once
     school_days = SchoolDay.objects.filter(
         student=student,
         date__range=[start_date, end_date]
-    ).values('date', 'subjects_completed')
+    ).prefetch_related('subjects')
     
     # Map dates to subjects for O(1) lookup
-    # attendance_map = { date: [subjects] }
-    attendance_map = {d['date']: d['subjects_completed'] or [] for d in school_days}
+    # attendance_map = { date: [subject_names] }
+    attendance_map = {
+        day.date: [s.name for s in day.subjects.all()] 
+        for day in school_days
+    }
     
     # 2. Build the Matrix (Months)
     months_data = []

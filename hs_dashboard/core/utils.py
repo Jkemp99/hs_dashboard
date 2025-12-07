@@ -23,14 +23,20 @@ def get_required_subjects(grade_level):
     # Default to elementary for 1st-6th, Kindergarten, and others
     return elementary_subjects
 
-def render_to_pdf(template_src, context_dict={}):
-    # Import locally to avoid startup errors, but allow ImportError to raise if called
+def generate_pdf_bytes(template_src, context_dict={}):
+    """Generates PDF bytes from a template and context."""
     from xhtml2pdf import pisa
-    
     template = get_template(template_src)
     html  = template.render(context_dict)
     result = BytesIO()
     pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
     if not pdf.err:
-        return HttpResponse(result.getvalue(), content_type='application/pdf')
-    return HttpResponse(f"PDF Generation Error: {pdf.err}", status=500)
+        return result.getvalue()
+    return None
+
+def render_to_pdf(template_src, context_dict={}):
+    """Utility for direct view response (Deprecated for async use)."""
+    pdf_content = generate_pdf_bytes(template_src, context_dict)
+    if pdf_content:
+        return HttpResponse(pdf_content, content_type='application/pdf')
+    return HttpResponse("PDF Generation Error", status=500)

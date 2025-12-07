@@ -77,6 +77,12 @@ class Student(models.Model):
     def is_subject_tracking(self):
         return self.tracking_mode == 'subjects'
 
+    @property
+    def display_grade(self):
+        if self.grade_level == 'Other' and self.custom_grade_level:
+            return self.custom_grade_level
+        return self.grade_level
+
 class Subject(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='subjects')
     name = models.CharField(max_length=100)
