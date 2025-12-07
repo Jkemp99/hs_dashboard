@@ -50,7 +50,7 @@ def portfolio_view(request):
     ), reverse=True)
 
     # ... (Rest of existing code: Attendance History fetching)
-    school_days = SchoolDay.objects.filter(student__user=request.user).select_related('student').order_by('-date', '-created_at')[:50]
+    school_days = SchoolDay.objects.filter(student__user=request.user).select_related('student').prefetch_related('subjects').order_by('-date', '-created_at')[:50]
 
     # 3. Calendar Logic
     import calendar
@@ -89,7 +89,7 @@ def portfolio_view(request):
         student__user=request.user,
         date__year=year,
         date__month=month
-    ).select_related('student')
+    ).select_related('student').prefetch_related('subjects')
 
     # Organize logs by day
     logs_by_date = {}
@@ -100,7 +100,7 @@ def portfolio_view(request):
         
         logs_by_date[date_obj].append({
             'student': log.student.name,
-            'subjects': log.subjects_completed, 
+            'subjects': [s.name for s in log.subjects.all()], 
             'notes': log.notes
         })
     
@@ -265,12 +265,23 @@ def add_edit_school_day(request):
             day = get_object_or_404(SchoolDay, id=day_id, student__user=request.user)
             day.student = student
             day.date = date_str
-            subjects = request.POST.getlist('subjects_completed')
-            day.subjects_completed = subjects
+            subjects_list = request.POST.getlist('subjects_completed')
             day.notes = request.POST.get('notes')
             day.save()
+            
+            # Update subjects
+            subject_objs = []
+            for s_name in subjects_list:
+                subj, _ = Subject.objects.get_or_create(student=student, name=s_name)
+                subject_objs.append(subj)
+            day.subjects.set(subject_objs)
         else:
-            SchoolDay.objects.create(student=student, date=date_str)
+            day = SchoolDay.objects.create(student=student, date=date_str)
+            subjects_list = request.POST.getlist('subjects_completed')
+            # Add subjects
+            for s_name in subjects_list:
+                subj, _ = Subject.objects.get_or_create(student=student, name=s_name)
+                day.subjects.add(subj)
         
         next_url = request.GET.get('next') or request.POST.get('next')
         if next_url:
@@ -284,7 +295,7 @@ def settings_view(request):
     students = Student.objects.filter(user=request.user)
     
     # Display recent attendance history (last 50 records)
-    school_days = SchoolDay.objects.filter(student__user=request.user).select_related('student').order_by('-date', '-created_at')[:50]
+    school_days = SchoolDay.objects.filter(student__user=request.user).select_related('student').prefetch_related('subjects').order_by('-date', '-created_at')[:50]
     
     # Calendar Logic
     import calendar
@@ -429,8 +440,15 @@ def log_school_day(request):
                 student=student, 
                 date=date_obj, 
                 notes=notes,
-                subjects_completed=subjects_completed
+                # subjects_completed=subjects_completed # Removed
             )
+            
+            # Handle M2M Subjects
+            if subjects_completed:
+                for s_name in subjects_completed:
+                    if s_name:
+                         subj, _ = Subject.objects.get_or_create(student=student, name=s_name)
+                         day.subjects.add(subj)
         except IntegrityError:
             # Handle duplicate date (silently fail or return error - simple return for now)
             # ideally we return an error message to HTMX
@@ -465,18 +483,25 @@ def bulk_log_school_day(request):
             # Filter students to ensure they belong to the user
             students = Student.objects.filter(id__in=student_ids, user=request.user)
             
-            school_days = []
             for student in students:
                 # Get subjects depending on specific student selection
                 subjects = request.POST.getlist(f'subjects_{student.id}')
-                school_days.append(SchoolDay(
+                
+                # Create Day
+                day = SchoolDay.objects.create(
                     student=student, 
                     date=date_obj, 
                     notes=notes,
-                    subjects_completed=subjects
-                ))
+                )
+                
+                # Add Subjects
+                if subjects:
+                    for s_name in subjects:
+                        if s_name:
+                             subj, _ = Subject.objects.get_or_create(student=student, name=s_name)
+                             day.subjects.add(subj)
             
-            SchoolDay.objects.bulk_create(school_days)
+            # SchoolDay.objects.bulk_create(school_days) # Removed in favor of loop for M2M
             
         return redirect('dashboard')
     return redirect('dashboard')
