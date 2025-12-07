@@ -1,0 +1,150 @@
+{% extends "pdfs/base_pdf.html" %}
+
+{% block title %}Attendance Report{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Specific styles for the grid to ensure strict borders */
+    .grid-table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    .grid-table th,
+    .grid-table td {
+        border: 1px solid black;
+        padding: 0;
+        text-align: center;
+        font-size: 9px;
+        vertical-align: middle;
+        height: 22px;
+    }
+
+    .month-col {
+        width: 15%;
+        text-align: left;
+        padding-left: 5px;
+        font-weight: bold;
+    }
+
+    .day-col {
+        width: 2.1%;
+    }
+
+    .total-col {
+        width: 19.9%;
+        font-weight: bold;
+    }
+
+    .cell-attended {
+        font-weight: bold;
+    }
+
+    .cell-invalid {
+        background-color: #cccccc;
+    }
+</style>
+{% endblock %}
+
+{% block header %}
+<h1>Compliance Record pursuant to SC Code § 59-65-47</h1>
+<h2>Association: {{ association_name }}<br />Academic Year: {{ academic_year }}</h2>
+
+<!-- 1. The Info Header (Invisible Table) -->
+<table width="100%" border="0" style="margin-bottom: 20px;">
+    <tr>
+        <td width="33%" align="left" valign="middle">
+            <strong>Student Name:</strong> <span style="text-decoration: underline;">{{ student.name }}</span>
+        </td>
+        <td width="34%" align="center" valign="middle">
+            <strong>Grade:</strong> <span style="text-decoration: underline;">{{ student.grade_level }}</span>
+        </td>
+        <td width="33%" align="right" valign="middle">
+            {% if stats.total_days %}
+            <strong>Total Days:</strong> {{ stats.total_days }}
+            {% endif %}
+        </td>
+    </tr>
+</table>
+{% endblock %}
+
+{% block content %}
+<!-- 2. The Attendance Grid (Visible Table) -->
+<table class="grid-table">
+    <!-- Header Row -->
+    <tr style="background-color: #ffffff;">
+        <th class="month-col" align="center" valign="middle">Month</th>
+        {% for i in "1234567890123456789012345678901"|make_list %}
+        <th class="day-col" align="center" valign="middle">{{ forloop.counter }}</th>
+        {% endfor %}
+        <th class="total-col" align="center" valign="middle">Total</th>
+    </tr>
+
+    <!-- Data Rows -->
+    {% for month in months_data %}
+    <tr>
+        <td class="month-col" align="center" valign="middle">{{ month.name }}</td>
+        {% for day in month.days %}
+        {% if day.code == 'INVALID' %}
+        <td class="cell-invalid" align="center" valign="middle"></td>
+        {% elif day.code == 'ATTENDED' %}
+        <td class="cell-attended" align="center" valign="middle">X</td>
+        {% else %}
+        <td align="center" valign="middle"></td>
+        {% endif %}
+        {% endfor %}
+        <td class="total-col" align="center" valign="middle">{% if month.total > 0 %}{{ month.total }}{% endif %}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<!-- 3. The Subject Summary (Invisible 2-Column Table) -->
+<div style="margin-top: 30px;">
+    <strong>Subject Summary</strong>
+    <table width="100%" border="0" style="margin-top: 5px;">
+        <tr>
+            <td width="50%" valign="top">
+                {% for subj, count in subjects %}
+                {% if not forloop.counter|divisibleby:2 %}
+                - {{ subj }}: {{ count }} days<br />
+                {% endif %}
+                {% endfor %}
+            </td>
+            <td width="50%" valign="top">
+                {% for subj, count in subjects %}
+                {% if forloop.counter|divisibleby:2 %}
+                - {{ subj }}: {{ count }} days<br />
+                {% endif %}
+                {% endfor %}
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div style="margin-top: 20px;">
+    <p><i>A portfolio of work samples has been maintained for this student and is available for review upon request.</i>
+    </p>
+</div>
+{% endblock %}
+
+{% block footer_content %}
+<!-- 4. The Footer (Signature Block) -->
+<p><strong>Parental Certification</strong><br />
+    I certify that the attendance and progress records included in this report are accurate and comply with the
+    requirements of South Carolina Code § 59-65-47.</p>
+
+<table width="100%" border="0" style="margin-top: 20px;">
+    <tr>
+        <td width="60%">
+            <!-- Using a div with border-top for the signature line -->
+            <div style="border-top: 1px solid black; margin-top: 30px; padding-top: 5px;">Parent/Guardian Signature
+            </div>
+        </td>
+        <td width="10%">&nbsp;</td> <!-- Spacer -->
+        <td width="30%">
+            <!-- Using a div with border-top for the date line -->
+            <div style="border-top: 1px solid black; margin-top: 30px; padding-top: 5px;">Date</div>
+        </td>
+    </tr>
+</table>
+{% endblock %}

@@ -1,0 +1,193 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Compliance Record</title>
+    <style type="text/css">
+        @page {
+            size: letter portrait;
+            margin: 1cm;
+
+            @frame footer {
+                -pdf-frame-content: footerContent;
+                bottom: 1cm;
+                margin-left: 1cm;
+                margin-right: 1cm;
+                height: 4cm;
+            }
+        }
+
+        body {
+            font-family: Helvetica, sans-serif;
+            font-size: 10pt;
+        }
+
+        h1 {
+            font-size: 16pt;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            font-size: 12pt;
+            text-align: center;
+            font-weight: normal;
+            margin-top: 5px;
+            margin-bottom: 20px;
+        }
+
+        .header-info {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .header-info td {
+            vertical-align: top;
+            padding: 5px;
+        }
+
+        .grid-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid black;
+            font-size: 8pt;
+        }
+
+        .grid-table th,
+        .grid-table td {
+            border: 0.5pt solid black;
+            text-align: center;
+            vertical-align: middle;
+            height: 15px;
+            padding: 2px;
+        }
+
+        .month-col {
+            width: 60px;
+            text-align: left;
+            padding-left: 5px;
+            font-weight: bold;
+        }
+
+        .day-col {
+            width: 15px;
+        }
+
+        .cell-attended {
+            font-weight: bold;
+            font-size: 10pt;
+        }
+
+        .cell-invalid {
+            background-color: #cccccc;
+        }
+
+        .summary-section {
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .footer {
+            font-size: 9pt;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid black;
+            width: 100%;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Compliance Record pursuant to SC Code § 59-65-47</h1>
+    <h2>Association: {{ association_name }}<br />Academic Year: {{ academic_year }}</h2>
+
+    <table class="header-info">
+        <tr>
+            <td width="50%">
+                <strong>Student Name:</strong> <span style="text-decoration: underline;">{{ student.name }}</span>
+            </td>
+            <td width="30%">
+                <strong>Grade:</strong> <span style="text-decoration: underline;">{{ student.grade_level }}</span>
+            </td>
+            <td width="20%">
+                <strong>Total Days:</strong> {{ stats.total_days }}
+            </td>
+        </tr>
+    </table>
+
+    <table class="grid-table">
+        <!-- Header Row -->
+        <tr style="background-color: #eeeeee;">
+            <th class="month-col">Month</th>
+            {% for i in "1234567890123456789012345678901"|make_list %}
+            <th class="day-col">{{ forloop.counter }}</th>
+            {% endfor %}
+        </tr>
+
+        <!-- Data Rows -->
+        {% for month in months_data %}
+        <tr>
+            <td class="month-col">{{ month.name }}</td>
+            {% for day in month.days %}
+            {% if day.code == 'INVALID' %}
+            <td class="cell-invalid"></td>
+            {% elif day.code == 'ATTENDED' %}
+            <td class="cell-attended">X</td>
+            {% else %}
+            <td></td>
+            {% endif %}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+
+    <div class="summary-section">
+        <h3>Subject Summary</h3>
+        {% if subjects %}
+        <table style="width: 100%; font-size: 9pt;">
+            <tr>
+                {% for subj, count in subjects %}
+                <td width="33%">- {{ subj }}: {{ count }} days</td>
+                {% if forloop.counter|divisibleby:3 and not forloop.last %}
+            </tr>
+            <tr>
+                {% endif %}
+                {% endfor %}
+            </tr>
+        </table>
+        {% else %}
+        <p>No subjects recorded.</p>
+        {% endif %}
+    </div>
+
+    <!-- Footer Content Defined in CSS Frame -->
+    <div id="footerContent">
+        <p><strong>Parental Certification</strong><br />
+            I certify that the attendance and progress records included in this report are accurate and comply with the
+            requirements of South Carolina Code § 59-65-47.</p>
+
+        <br /><br />
+
+        <table width="100%">
+            <tr>
+                <td width="60%" style="border-bottom: 1px solid black;"></td>
+                <td width="10%"></td>
+                <td width="30%" style="border-bottom: 1px solid black;">{{ generated_date|date:"F d, Y" }}</td>
+            </tr>
+            <tr>
+                <td style="padding-top: 5px;">Parent/Guardian Signature</td>
+                <td></td>
+                <td style="padding-top: 5px;">Date</td>
+            </tr>
+        </table>
+
+        <div style="text-align: center; margin-top: 10px; font-size: 8pt; color: #666;">
+            Page <pdf:pagenumber>
+        </div>
+    </div>
+</body>
+
+</html>

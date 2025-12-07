@@ -1,0 +1,111 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>{% block title %}Report{% endblock %}</title>
+    <style type="text/css">
+        @page {
+            size: letter portrait;
+            margin: 1cm;
+
+            @frame footer {
+                -pdf-frame-content: footerContent;
+                bottom: 1cm;
+                margin-left: 1cm;
+                margin-right: 1cm;
+                height: 4cm;
+            }
+        }
+
+        body {
+            font-family: Helvetica, sans-serif;
+            font-size: 10pt;
+        }
+
+        h1 {
+            font-size: 16pt;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            font-size: 12pt;
+            text-align: center;
+            font-weight: normal;
+            margin-top: 5px;
+            margin-bottom: 20px;
+        }
+
+        .header-info {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .header-info td {
+            vertical-align: top;
+            padding: 5px;
+        }
+
+        /* Footer Styles */
+        .footer {
+            font-size: 9pt;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    {% block header %}
+    <h1>Compliance Record pursuant to SC Code § 59-65-47</h1>
+    <h2>Association: {{ association_name }}<br />Academic Year: {{ academic_year }}</h2>
+
+    <table class="header-info" width="100%">
+        <tr>
+            <td width="33%">
+                <strong>Student Name:</strong> <span style="text-decoration: underline;">{{ student.name }}</span>
+            </td>
+            <td width="34%" align="center">
+                <strong>Grade:</strong> <span style="text-decoration: underline;">{{ student.grade_level }}</span>
+            </td>
+            <td width="33%" align="right">
+                {% if stats.total_days %}
+                <strong>Total Days:</strong> {{ stats.total_days }}
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+    {% endblock %}
+
+    {% block content %}{% endblock %}
+
+    <!-- Footer Content Defined in CSS Frame -->
+    <div id="footerContent">
+        {% block footer_content %}
+        <p><strong>Parental Certification</strong><br />
+            I certify that the attendance and progress records included in this report are accurate and comply with the
+            requirements of South Carolina Code § 59-65-47.</p>
+
+        <br /><br />
+
+        <table width="100%">
+            <tr>
+                <td width="60%" style="border-bottom: 1px solid black;"></td>
+                <td width="10%"></td>
+                <td width="30%" style="border-bottom: 1px solid black;">{{ generated_date|date:"F d, Y" }}</td>
+            </tr>
+            <tr>
+                <td style="padding-top: 5px;">Parent/Guardian Signature</td>
+                <td></td>
+                <td style="padding-top: 5px;">Date</td>
+            </tr>
+        </table>
+        {% endblock %}
+
+        <div style="text-align: center; margin-top: 10px; font-size: 8pt; color: #666;">
+            <i>Generated via Homeschool Dashboard on {{ generated_date|date:"F d, Y" }}</i>
+        </div>
+    </div>
+</body>
+
+</html>

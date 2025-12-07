@@ -1,0 +1,515 @@
+{% extends 'core/dashboard.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Portfolio</h1>
+            <p class="text-gray-600">Review your attendance and work samples</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboard' %}"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2">
+                Home
+            </a>
+            <a href="{% url 'settings' %}" class="text-blue-500 hover:text-blue-700 font-bold mr-4">
+                Settings
+            </a>
+            <a href="{% url 'account_logout' %}"
+                class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+                Logout
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left Column: Calendar & History -->
+        <div class="lg:col-span-1 space-y-8">
+            <!-- Calendar Section -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">Attendance Calendar</h2>
+                    <div class="flex space-x-2">
+                        <a href="?month={{ prev_month }}&year={{ prev_year }}"
+                            class="text-gray-600 hover:text-blue-500 font-bold">&larr;</a>
+                        <span class="font-bold text-gray-700">{{ current_month_name }} {{ current_year }}</span>
+                        <a href="?month={{ next_month }}&year={{ next_year }}"
+                            class="text-gray-600 hover:text-blue-500 font-bold">&rarr;</a>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-7 gap-1 text-center text-sm">
+                    <div class="font-bold text-gray-600">Mo</div>
+                    <div class="font-bold text-gray-600">Tu</div>
+                    <div class="font-bold text-gray-600">We</div>
+                    <div class="font-bold text-gray-600">Th</div>
+                    <div class="font-bold text-gray-600">Fr</div>
+                    <div class="font-bold text-gray-600">Sa</div>
+                    <div class="font-bold text-gray-600">Su</div>
+
+                    {% for week in calendar_weeks %}
+                    {% for day in week %}
+                    {% if day.day %}
+                    <div class="relative mx-auto mb-1 w-8 h-8">
+                        <div onclick="toggleDayPopover(event, 'popover-{{ day.day }}')"
+                            class="{% if day.is_logged %}bg-green-500 text-white cursor-pointer hover:bg-green-600{% else %}bg-gray-100 text-gray-700{% endif %} {% if day.has_sample %}ring-2 ring-purple-500{% endif %} rounded-full w-full h-full flex items-center justify-center transition-colors">
+                            {{ day.day }}
+                        </div>
+
+                        {% if day.logs %}
+                        <div id="popover-{{ day.day }}"
+                            class="day-popover absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden w-56 p-3 bg-gray-800 text-white text-xs rounded shadow-xl z-50 text-left"
+                            onclick="event.stopPropagation()">
+                            {% for log in day.logs %}
+                            <div class="{% if not forloop.last %}mb-2 border-b border-gray-700 pb-2{% endif %}">
+                                <span class="font-bold text-blue-300 block mb-1">{{ log.student }}</span>
+                                <div class="text-gray-300 leading-tight mb-1">
+                                    {% for subject in log.subjects %}
+                                    {{ subject }}{% if not forloop.last %}, {% endif %}
+                                    {% empty %}
+                                    <span class="italic text-gray-500">No subjects</span>
+                                    {% endfor %}
+                                </div>
+                                {% if log.notes %}
+                                <div class="mt-1 pt-1 border-t border-gray-700 text-gray-400 italic">
+                                    {{ log.notes }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                            <!-- Arrow -->
+                            <div
+                                class="absolute top-100 left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800">
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div></div>
+                    {% endif %}
+                    {% endfor %}
+                    {% endfor %}
+                </div>
+                <div class="mt-4 text-xs text-gray-500 text-center flex justify-center gap-4">
+                    <div class="flex items-center">
+                        <span class="inline-block w-3 h-3 bg-green-500 rounded-full mr-1"></span> Logged Day
+                    </div>
+                    <div class="flex items-center">
+                        <span class="inline-block w-3 h-3 rounded-full mr-1 ring-2 ring-purple-500"></span> Work Sample
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent History Section -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Recent Attendance</h2>
+                {% if school_days %}
+                {% regroup school_days by date as date_list %}
+                <div class="space-y-4">
+                    {% for date_group in date_list %}
+                    <div
+                        class="bg-white border rounded-lg overflow-hidden {% if forloop.counter > 3 %}hidden extra-history-item{% endif %}">
+                        <!-- Sticky Date Header -->
+                        <div
+                            class="sticky top-0 bg-gray-100 px-4 py-2 font-bold text-gray-700 border-b flex justify-between items-center z-10">
+                            <span>{{ date_group.grouper|date:"l, F j, Y" }}</span>
+                            <span class="text-xs font-normal text-gray-500">{{ date_group.list|length }} {% if date_group.list|length == 1 %}Entry{% else %}Entries{% endif %}</span>
+                        </div>
+
+                        <ul class="divide-y divide-gray-100">
+                            {% for day in date_group.list %}
+                            <li class="p-3 hover:bg-gray-50 transition relative group">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-grow">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="text-sm font-bold text-gray-800">{{ day.student.name }}</span>
+                                        </div>
+                                        <!-- Subject Badges -->
+                                        {% if day.subjects_completed %}
+                                        <div class="flex flex-wrap gap-1 mt-1">
+                                            {% for subject in day.subjects_completed %}
+                                            <span
+                                                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                {{ subject }}
+                                            </span>
+                                            {% endfor %}
+                                        </div>
+                                        {% else %}
+                                        <span class="text-xs text-gray-400 italic">No subjects logged</span>
+                                        {% endif %}
+
+                                        <!-- Notes (Inline) -->
+                                        {% if day.notes %}
+                                        <div class="mt-2 text-sm text-gray-600">
+                                            <div id="note-text-{{ day.id }}"
+                                                class="line-clamp-2 transition-all duration-300">
+                                                {{ day.notes|linebreaksbr }}
+                                            </div>
+                                            {% if day.notes|length > 100 %}
+                                            <button onclick="toggleNote('{{ day.id }}')" id="note-toggle-{{ day.id }}"
+                                                class="text-blue-500 text-xs hover:underline mt-1 focus:outline-none font-medium">
+                                                Show more
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="flex items-center space-x-1">
+                                        <!-- Edit Icon -->
+                                        <button type="button"
+                                            onclick="editDay('{{ day.id }}', '{{ day.student.id }}', '{{ day.date|date:'Y-m-d' }}', '{{ day.notes|escapejs }}', [{% for s in day.subjects_completed %}'{{ s|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}])"
+                                            class="text-gray-400 hover:text-blue-600 p-1" title="Edit">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
+                                                </path>
+                                            </svg>
+                                        </button>
+
+                                        <!-- Delete Button -->
+                                        <form action="{% url 'delete_school_day' day.id %}?next={% url 'portfolio' %}"
+                                            method="POST" id="delete-day-{{ day.id }}">
+                                            {% csrf_token %}
+                                            <button type="button"
+                                                onclick="showDeleteModal('delete-day-{{ day.id }}', 'Are you sure you want to delete this entry for {{ day.student.name|escapejs }} on {{ day.date|escapejs }}?')"
+                                                class="text-gray-400 hover:text-red-600 p-1" title="Delete">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endfor %}
+
+                    {% if date_list|length > 3 %}
+                    <div class="text-center pt-2">
+                        <button onclick="toggleHistory()" id="history-toggle-btn"
+                            class="text-blue-500 hover:text-blue-700 font-medium text-sm focus:outline-none">
+                            Show All History
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p class="text-gray-500 italic">No attendance logged yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Column: Work Samples -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <h2 class="text-xl font-bold text-gray-800">Work Samples Gallery</h2>
+
+                    <!-- Filter Form -->
+                    <form method="GET" class="flex flex-wrap items-center gap-2">
+                        <!-- Preserve Calendar State -->
+                        <input type="hidden" name="month" value="{{ current_date.month }}">
+                        <input type="hidden" name="year" value="{{ current_year }}">
+
+                        <select name="sample_year"
+                            class="border rounded px-2 py-1 text-sm bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <option value="">All Years</option>
+                            {% for option in year_options %}
+                            <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{
+                                option.value }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <select name="sample_month"
+                            class="border rounded px-2 py-1 text-sm bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <option value="">All Months</option>
+                            {% for option in month_options %}
+                            <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{
+                                option.name }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <button type="submit"
+                            class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1.5 px-3 rounded transition">
+                            Filter
+                        </button>
+                        {% if selected_sample_year or selected_sample_month %}
+                        <a href="{% url 'portfolio' %}?month={{ current_date.month }}&year={{ current_year }}"
+                            class="text-gray-500 hover:text-gray-700 text-xs underline">
+                            Clear
+                        </a>
+                        {% endif %}
+                    </form>
+                </div>
+
+                {% if work_samples %}
+                {% regroup work_samples by student as student_list %}
+                {% for student_group in student_list %}
+                <details class="group mt-6" open>
+                    <summary
+                        class="text-lg font-bold text-gray-700 cursor-pointer list-none flex items-center justify-between border-b pb-1 mb-3 select-none">
+                        <span>{{ student_group.grouper.name }}</span>
+                        <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-200 group-open:rotate-180"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
+                        </svg>
+                    </summary>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {% for sample in student_group.list %}
+                        <div
+                            class="relative group aspect-w-10 aspect-h-7 bg-gray-200 rounded-lg overflow-hidden border">
+                            <a href="{{ sample.file.url }}" target="_blank" class="block w-full h-full">
+                                {% if sample.is_pdf %}
+                                <div class="flex items-center justify-center h-full bg-red-50 text-red-500 flex-col">
+                                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z">
+                                        </path>
+                                    </svg>
+                                    <span class="text-xs mt-1 font-bold">PDF</span>
+                                </div>
+                                {% else %}
+                                <img src="{{ sample.file.url }}" class="w-full h-full object-cover">
+                                {% endif %}
+                                <div
+                                    class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition flex flex-col items-center justify-center">
+                                    <span
+                                        class="text-white opacity-0 group-hover:opacity-100 text-sm font-bold text-center px-2">
+                                        {{ sample.subject }}
+                                    </span>
+                                    <span class="text-white opacity-0 group-hover:opacity-100 text-xs text-center">
+                                        {{ sample.student.name }}<br>
+                                        {{ sample.date_uploaded|date:"M j, Y" }}
+                                    </span>
+                                </div>
+                            </a>
+
+                            <!-- Delete Button using Global Modal -->
+                            <form action="{% url 'delete_work_sample' sample.id %}?next={% url 'portfolio' %}"
+                                method="POST" id="delete-sample-{{ sample.id }}" class="absolute top-1 right-1 z-20">
+                                {% csrf_token %}
+                                <button type="button"
+                                    onclick="showDeleteModal('delete-sample-{{ sample.id }}', 'Are you sure you want to delete this work sample for {{ sample.subject|escapejs }}?')"
+                                    class="bg-red-500 hover:bg-red-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition shadow-sm"
+                                    title="Delete">
+                                    &times;
+                                </button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </details>
+                {% endfor %}
+                {% else %}
+                <div class="text-center py-12 bg-gray-50 rounded-lg">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                        </path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No work samples</h3>
+                    <p class="mt-1 text-sm text-gray-500">Get started by uploading a sample from the dashboard.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Day Modal -->
+    <div id="edit-day-modal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title"
+        role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeEditDayModal()"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div
+                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <form method="post" action="{% url 'settings' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_edit_day">
+                    <input type="hidden" name="day_id" id="edit_day_id">
+                    <input type="hidden" name="student_id" id="edit_student_id">
+                    <input type="hidden" name="next" value="{% url 'portfolio' %}">
+
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div
+                                class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                                <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Edit School Day
+                                </h3>
+                                <div class="mt-4 space-y-4">
+                                    <div>
+                                        <label class="block text-gray-700 text-sm font-bold mb-1">Date</label>
+                                        <input type="date" name="date" id="edit_day_date" required
+                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-sm font-bold mb-1">Subjects
+                                            Completed</label>
+                                        <div id="edit_subjects_container"
+                                            class="space-y-1 max-h-32 overflow-y-auto border rounded p-2 bg-gray-50 text-sm">
+                                            <!-- Checkboxes injected by JS -->
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-sm font-bold mb-1">Notes</label>
+                                        <textarea name="notes" id="edit_day_notes" rows="3"
+                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button type="submit"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                            Save Changes
+                        </button>
+                        <button type="button" onclick="closeEditDayModal()"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit JS -->
+    {{ student_subjects_map|json_script:"student-subjects-data" }}
+    <script>
+        // Pass student_subjects_map from Django to JS
+        const studentSubjectsMapRaw = document.getElementById('student-subjects-data').textContent;
+        const studentSubjectsMap = JSON.parse(studentSubjectsMapRaw);
+
+        function editDay(dayId, studentId, date, notes, completedSubjects) {
+            document.getElementById('edit_day_id').value = dayId;
+            document.getElementById('edit_student_id').value = studentId;
+            document.getElementById('edit_day_date').value = date;
+            document.getElementById('edit_day_notes').value = notes || '';
+
+            // Parse completed subjects if it's a string (from template)
+            let completed = [];
+            if (typeof completedSubjects === 'string') {
+                // Remove brackets and quotes to parse simple list string '[&#x27;Math&#x27;, ...]'
+                // Actually, assuming it's passed as a JS array or we parse it carefully
+                // Simplest is to pass it as a JS list literal from the template
+                completed = JSON.parse(completedSubjects.replace(/'/g, '"'));
+            } else if (Array.isArray(completedSubjects)) {
+                completed = completedSubjects;
+            }
+
+            // Populate Subjects Checkboxes
+            const container = document.getElementById('edit_subjects_container');
+            container.innerHTML = ''; // Clear previous
+
+            const availableSubjects = studentSubjectsMap[studentId] || [];
+
+            if (availableSubjects.length === 0) {
+                container.innerHTML = '<span class="text-gray-500 italic text-xs">No subjects found for this student.</span>';
+            } else {
+                availableSubjects.forEach(subject => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center space-x-2';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.name = 'subjects_completed';
+                    checkbox.value = subject;
+                    checkbox.className = 'form-checkbox h-4 w-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300';
+
+                    if (completed.includes(subject)) {
+                        checkbox.checked = true;
+                    }
+
+                    const label = document.createElement('label');
+                    label.textContent = subject;
+                    label.className = 'text-gray-700';
+
+                    div.appendChild(checkbox);
+                    div.appendChild(label);
+                    container.appendChild(div);
+                });
+            }
+
+            document.getElementById('edit-day-modal').classList.remove('hidden');
+        }
+
+        function closeEditDayModal() {
+            document.getElementById('edit-day-modal').classList.add('hidden');
+        }
+
+        function toggleNote(id) {
+            const textDiv = document.getElementById(`note-text-${id}`);
+            const btn = document.getElementById(`note-toggle-${id}`);
+
+            if (textDiv.classList.contains('line-clamp-2')) {
+                textDiv.classList.remove('line-clamp-2');
+                btn.textContent = 'Show less';
+            } else {
+                textDiv.classList.add('line-clamp-2');
+                btn.textContent = 'Show more';
+            }
+        }
+
+        // Calendar Popover Logic
+        function toggleDayPopover(event, popoverId) {
+            event.stopPropagation();
+            const targetPopover = document.getElementById(popoverId);
+
+            // If target is missing (e.g. unlogged day), do nothing
+            if (!targetPopover) return;
+
+            // Close all other popovers
+            const allPopovers = document.querySelectorAll('.day-popover');
+            allPopovers.forEach(p => {
+                if (p.id !== popoverId) {
+                    p.classList.add('hidden');
+                }
+            });
+
+            // Toggle target
+            targetPopover.classList.toggle('hidden');
+        }
+
+        // Close popovers on click outside
+        document.addEventListener('click', function (event) {
+            const allPopovers = document.querySelectorAll('.day-popover');
+            allPopovers.forEach(p => {
+                p.classList.add('hidden');
+            });
+        });
+
+        function toggleHistory() {
+            const extraItems = document.querySelectorAll('.extra-history-item');
+            const btn = document.getElementById('history-toggle-btn');
+
+            extraItems.forEach(item => {
+                item.classList.toggle('hidden');
+            });
+
+            if (btn.innerText.includes('Show All')) {
+                btn.innerText = 'Show Less';
+            } else {
+                btn.innerText = 'Show All History';
+            }
+        }
+    </script>
+</div>
+{% endblock %}

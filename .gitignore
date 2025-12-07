@@ -1,0 +1,18 @@
+# Security
+db.sqlite3
+.env
+
+# Junk
+__pycache__/
+*.pyc
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Generated
+*.log
+*.pdf
+
+# Media (Ignore content, keep folder)
+hs_dashboard/media/
