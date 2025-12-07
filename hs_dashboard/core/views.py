@@ -195,7 +195,20 @@ def settings_view(request):
     if request.method == 'POST':
         action = request.POST.get('action')
         
-        if action == 'delete_student':
+        if action == 'update_family_settings':
+            association_id = request.POST.get('association_id')
+            profile = request.user.profile
+            from .models import Association # Import inside to avoid circular deps if any, or just clean handling
+            
+            if association_id:
+                assoc = get_object_or_404(Association, id=association_id)
+                profile.association = assoc
+            else:
+                profile.association = None
+            profile.save()
+            return redirect('settings')
+
+        elif action == 'delete_student':
             student_id = request.POST.get('student_id')
             student = get_object_or_404(Student, id=student_id, user=request.user)
             student.delete()
@@ -340,6 +353,11 @@ def settings_view(request):
                 week_data.append({'day': day, 'is_logged': is_logged})
         calendar_weeks.append(week_data)
 
+    
+    # Get all Associations
+    from .models import Association
+    associations = Association.objects.all()
+
     return render(request, 'core/settings.html', {
         'students': students, 
         'grade_choices': Student.GRADE_CHOICES,
@@ -352,6 +370,7 @@ def settings_view(request):
         'prev_year': prev_year,
         'next_month': next_month,
         'next_year': next_year,
+        'associations': associations,
     })
 
 @login_required

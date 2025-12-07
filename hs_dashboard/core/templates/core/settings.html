@@ -24,6 +24,43 @@
             </a>
         </div>
     </div>
+    
+    <!-- Family Settings -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Family Settings</h2>
+        
+        <form method="post" class="w-full max-w-lg">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_family_settings">
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="association_id">
+                    Accountability Association
+                </label>
+                <div class="relative">
+                    <select name="association_id" id="association_id" 
+                        class="block appearance-none w-full bg-white border border-gray-400 hover:border-gray-500 px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline">
+                        <option value="">No Association Selected</option>
+                        {% for assoc in associations %}
+                        <option value="{{ assoc.id }}" {% if user.profile.association.id == assoc.id %}selected{% endif %}>
+                            {{ assoc.name }} (Required Days: {{ assoc.required_days }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Select the association your family is registered with. This will be used for all reports.</p>
+            </div>
+            
+            <button type="submit" class="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Update Settings
+            </button>
+        </form>
+    </div>
 
     <!-- Student List -->
     <div class="bg-white rounded-lg shadow-lg p-6 mb-8">

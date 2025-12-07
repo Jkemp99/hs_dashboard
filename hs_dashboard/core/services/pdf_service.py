@@ -89,9 +89,11 @@ def prepare_compliance_data(student, start_date, end_date):
     
     # Association Logic
     association_name = 'Unknown Association'
-    if student.association:
-        association_name = student.association.name
-        days_required = student.association.required_days
+    # Access association via the student's user profile
+    if hasattr(student.user, 'profile') and student.user.profile.association:
+        assoc = student.user.profile.association
+        association_name = assoc.name
+        days_required = assoc.required_days
         
         # recalculate days remaining based on association requirement
         days_remaining = max(0, days_required - total_days)
