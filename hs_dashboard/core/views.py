@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from datetime import date
 from .models import Student, SchoolDay, Subject, WorkSample
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 from django.http import HttpResponse, FileResponse
 from django.db import IntegrityError
 from fpdf import FPDF
@@ -356,12 +356,18 @@ def settings_view(request):
 
 @login_required
 def dashboard(request):
-    # Fetch all students for the logged-in user, prefetching subjects
-    students = Student.objects.filter(user=request.user).prefetch_related('subjects')
+    # Optimizing query to prevent N+1 problem
+    students = Student.objects.filter(user=request.user).annotate(
+        days_completed_count=Count('school_days')
+    ).prefetch_related(
+        'subjects',
+        Prefetch('work_samples', queryset=WorkSample.objects.order_by('-date_uploaded'))
+    )
     
     students_data = []
     for student in students:
-        days_completed = student.school_days.count()
+        # Use annotated count
+        days_completed = student.days_completed_count
         progress_percentage = min(100, int((days_completed / 180) * 100))
         days_remaining = max(0, 180 - days_completed)
         
@@ -370,21 +376,19 @@ def dashboard(request):
         # Calculate 6-week compliance window
         six_weeks_ago = timezone.now().date() - timezone.timedelta(days=42)
 
-        # Check compliance
-        missing_samples = []
-        for subject in required_subjects:
-            # Check if there is a sample in the last 6 weeks
-            has_recent_sample = WorkSample.objects.filter(
-                student=student,
-                subject=subject,
-                date_uploaded__gte=six_weeks_ago
-            ).exists()
-            
-            if not has_recent_sample:
-                missing_samples.append(subject)
+        # Check compliance using prefetched data
+        all_samples = list(student.work_samples.all())
+        
+        valid_subjects = {
+            s.subject for s in all_samples if s.date_uploaded >= six_weeks_ago
+        }
+        
+        missing_samples = [
+            s for s in required_subjects if s not in valid_subjects
+        ]
 
-        # Get recent uploads
-        recent_samples = student.work_samples.order_by('-date_uploaded')[:5]
+        # Get recent uploads from prefetched list
+        recent_samples = all_samples[:5]
 
         students_data.append({
             'student': student,
