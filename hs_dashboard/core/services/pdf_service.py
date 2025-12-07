@@ -86,6 +86,15 @@ def prepare_compliance_data(student, start_date, end_date):
     academic_year_label = f"{start_date.year}-{end_date.year}"
     if start_date.year == end_date.year:
         academic_year_label = f"{start_date.year}"
+    
+    # Association Logic
+    association_name = 'Unknown Association'
+    if student.association:
+        association_name = student.association.name
+        days_required = student.association.required_days
+        
+        # recalculate days remaining based on association requirement
+        days_remaining = max(0, days_required - total_days)
         
     context = {
         'student': student,
@@ -97,7 +106,7 @@ def prepare_compliance_data(student, start_date, end_date):
         },
         'subjects': sorted_subjects, # List of tuples (name, count)
         'generated_date': date.today(),
-        'association_name': 'Palmetto Digital Association', # Hardcoded as per request
+        'association_name': association_name,
     }
     
     return context

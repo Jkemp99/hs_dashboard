@@ -2,8 +2,20 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
 
+
+class Association(models.Model):
+    name = models.CharField(max_length=200)
+    director_name = models.CharField(max_length=100)
+    required_days = models.PositiveIntegerField(default=180)
+    logo = models.ImageField(upload_to='association_logos/', blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
 class Student(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='students', default=1)
+    association = models.ForeignKey(Association, on_delete=models.SET_NULL, null=True, blank=True, related_name='students')
+
     GRADE_CHOICES = [
         ('Kindergarten', 'Kindergarten'),
         ('1st Grade', '1st Grade'),
