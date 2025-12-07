@@ -6,16 +6,13 @@ from .models import Student, SchoolDay, Subject, WorkSample
 from django.db.models import Count, Prefetch
 from django.http import HttpResponse, FileResponse
 from django.db import IntegrityError
-from fpdf import FPDF
+
 from .utils import get_required_subjects
-import io
-import os
-import json
+
 from django.utils.text import slugify
 
 # PDF Imports
-# from django.template.loader import render_to_string
-# from xhtml2pdf import pisa
+
 from core.services.pdf_service import prepare_compliance_data
 
 @login_required
@@ -526,11 +523,10 @@ def delete_student(request, student_id):
     return redirect('dashboard')
 
 # PDF Imports
-# from django.template.loader import render_to_string
-# from xhtml2pdf import pisa
+
 from core.services.pdf_service import prepare_compliance_data
-from core.services.pdf_renderer import render_compliance_report
-from django.utils.text import slugify
+
+
 
 @login_required
 def download_report(request):
