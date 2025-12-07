@@ -190,111 +190,95 @@ def portfolio_view(request):
     })
 
 @login_required
-def settings_view(request):
-    # Handle form submission for adding/editing/deleting students and days
+def update_family_settings(request):
     if request.method == 'POST':
-        action = request.POST.get('action')
+        association_id = request.POST.get('association_id')
+        profile = request.user.profile
+        from .models import Association
         
-        if action == 'update_family_settings':
-            association_id = request.POST.get('association_id')
-            profile = request.user.profile
-            from .models import Association # Import inside to avoid circular deps if any, or just clean handling
-            
-            if association_id:
-                assoc = get_object_or_404(Association, id=association_id)
-                profile.association = assoc
-            else:
-                profile.association = None
-            profile.save()
-            return redirect('settings')
+        if association_id:
+            assoc = get_object_or_404(Association, id=association_id)
+            profile.association = assoc
+        else:
+            profile.association = None
+        profile.save()
+    return redirect('settings')
 
-        elif action == 'delete_student':
-            student_id = request.POST.get('student_id')
+@login_required
+def add_edit_student(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        grade_level = request.POST.get('grade_level')
+        custom_grade = request.POST.get('custom_grade_level')
+        tracking_mode = request.POST.get('tracking_mode', 'attendance')
+        academic_year_start_month = request.POST.get('academic_year_start_month')
+        academic_year_end_month = request.POST.get('academic_year_end_month')
+        student_id = request.POST.get('student_id')
+        
+        if student_id:
             student = get_object_or_404(Student, id=student_id, user=request.user)
-            student.delete()
-            return redirect('settings')
-            
-        elif action == 'delete_day':
-            day_id = request.POST.get('day_id')
-            # Ensure the day belongs to a student owned by the user
+            student.name = name
+            student.grade_level = grade_level
+            student.custom_grade_level = custom_grade
+            student.tracking_mode = tracking_mode
+            if academic_year_start_month:
+                student.academic_year_start_month = int(academic_year_start_month)
+            if academic_year_end_month:
+                student.academic_year_end_month = int(academic_year_end_month)
+            student.save()
+        else:
+            user = request.user
+            student = Student(user=user, name=name, grade_level=grade_level, custom_grade_level=custom_grade, tracking_mode=tracking_mode)
+            if academic_year_start_month:
+                student.academic_year_start_month = int(academic_year_start_month)
+            if academic_year_end_month:
+                student.academic_year_end_month = int(academic_year_end_month)
+            student.save()
+    return redirect('settings')
+
+@login_required
+def add_subject(request):
+    if request.method == 'POST':
+        student_id = request.POST.get('student_id')
+        subject_name = request.POST.get('subject_name')
+        student = get_object_or_404(Student, id=student_id, user=request.user)
+        Subject.objects.create(student=student, name=subject_name)
+    return redirect('settings')
+
+@login_required
+def delete_subject(request, subject_id):
+    if request.method == 'POST':
+        subject = get_object_or_404(Subject, id=subject_id, student__user=request.user)
+        subject.delete()
+    return redirect('settings')
+
+@login_required
+def add_edit_school_day(request):
+    if request.method == 'POST':
+        day_id = request.POST.get('day_id')
+        student_id = request.POST.get('student_id')
+        date_str = request.POST.get('date')
+        
+        student = get_object_or_404(Student, id=student_id, user=request.user)
+        
+        if day_id:
             day = get_object_or_404(SchoolDay, id=day_id, student__user=request.user)
-            day.delete()
-            return redirect('settings')
-            
-        elif action == 'add_edit_day':
-            day_id = request.POST.get('day_id')
-            student_id = request.POST.get('student_id')
-            date_str = request.POST.get('date')
-            
-            # Ensure student belongs to user
-            student = get_object_or_404(Student, id=student_id, user=request.user)
-            
-            if day_id:
-                # Edit existing day
-                day = get_object_or_404(SchoolDay, id=day_id, student__user=request.user)
-                day.student = student
-                day.date = date_str
-                
-                # Handle subjects
-                subjects = request.POST.getlist('subjects_completed')
-                day.subjects_completed = subjects
-                day.notes = request.POST.get('notes')  # Ensure notes are also updated if passed
-                
-                day.save()
-            else:
-                # Create new day
-                SchoolDay.objects.create(student=student, date=date_str)
-            
-            next_url = request.GET.get('next') or request.POST.get('next')
-            if next_url:
-                return redirect(next_url)
-            return redirect('settings')
+            day.student = student
+            day.date = date_str
+            subjects = request.POST.getlist('subjects_completed')
+            day.subjects_completed = subjects
+            day.notes = request.POST.get('notes')
+            day.save()
+        else:
+            SchoolDay.objects.create(student=student, date=date_str)
+        
+        next_url = request.GET.get('next') or request.POST.get('next')
+        if next_url:
+            return redirect(next_url)
+    return redirect('settings')
 
-        elif action == 'add_edit_student':
-            # Add/Edit Student
-            name = request.POST.get('name')
-            grade_level = request.POST.get('grade_level')
-            custom_grade = request.POST.get('custom_grade_level')
-            tracking_mode = request.POST.get('tracking_mode', 'attendance')
-            academic_year_start_month = request.POST.get('academic_year_start_month')
-            academic_year_end_month = request.POST.get('academic_year_end_month')
-            student_id = request.POST.get('student_id')
-            
-            if student_id:
-                # Edit existing student
-                student = get_object_or_404(Student, id=student_id, user=request.user)
-                student.name = name
-                student.grade_level = grade_level
-                student.custom_grade_level = custom_grade
-                student.tracking_mode = tracking_mode
-                if academic_year_start_month:
-                    student.academic_year_start_month = int(academic_year_start_month)
-                if academic_year_end_month:
-                    student.academic_year_end_month = int(academic_year_end_month)
-                student.save()
-            else:
-                # Add new student
-                user = request.user
-                student = Student(user=user, name=name, grade_level=grade_level, custom_grade_level=custom_grade, tracking_mode=tracking_mode)
-                if academic_year_start_month:
-                    student.academic_year_start_month = int(academic_year_start_month)
-                if academic_year_end_month:
-                    student.academic_year_end_month = int(academic_year_end_month)
-                student.save()
-            return redirect('settings')
-
-        elif action == 'add_subject':
-            student_id = request.POST.get('student_id')
-            subject_name = request.POST.get('subject_name')
-            student = get_object_or_404(Student, id=student_id, user=request.user)
-            Subject.objects.create(student=student, name=subject_name)
-            return redirect('settings')
-
-        elif action == 'delete_subject':
-            subject_id = request.POST.get('subject_id')
-            subject = get_object_or_404(Subject, id=subject_id, student__user=request.user)
-            subject.delete()
-            return redirect('settings')
+@login_required
+def settings_view(request):
         
     # Display students
     students = Student.objects.filter(user=request.user)

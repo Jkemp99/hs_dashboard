@@ -24,25 +24,24 @@
             </a>
         </div>
     </div>
-    
+
     <!-- Family Settings -->
     <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
         <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Family Settings</h2>
-        
-        <form method="post" class="w-full max-w-lg">
+
+        <form method="post" action="{% url 'update_family_settings' %}" class="w-full max-w-lg">
             {% csrf_token %}
-            <input type="hidden" name="action" value="update_family_settings">
-            
+
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="association_id">
                     Accountability Association
                 </label>
                 <div class="relative">
-                    <select name="association_id" id="association_id" 
+                    <select name="association_id" id="association_id"
                         class="block appearance-none w-full bg-white border border-gray-400 hover:border-gray-500 px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline">
                         <option value="">No Association Selected</option>
                         {% for assoc in associations %}
-                        <option value="{{ assoc.id }}" {% if user.profile.association.id == assoc.id %}selected{% endif %}>
+                        <option value="{{ assoc.id }}" {% if user.profile.association.id  ==  assoc.id %}selected{% endif %}>
                             {{ assoc.name }} (Required Days: {{ assoc.required_days }})
                         </option>
                         {% endfor %}
@@ -53,10 +52,12 @@
                         </svg>
                     </div>
                 </div>
-                <p class="text-xs text-gray-500 mt-1">Select the association your family is registered with. This will be used for all reports.</p>
+                <p class="text-xs text-gray-500 mt-1">Select the association your family is registered with. This will
+                    be used for all reports.</p>
             </div>
-            
-            <button type="submit" class="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+
+            <button type="submit"
+                class="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
                 Update Settings
             </button>
         </form>
@@ -98,14 +99,14 @@
                         <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <p class="text-gray-900 whitespace-no-wrap">
                                 {{ student.grade_level }}
-                                {% if student.grade_level == 'Other' and student.custom_grade_level %}
+                                {% if student.grade_level  ==  'Other' and student.custom_grade_level %}
                                 ({{ student.custom_grade_level }})
                                 {% endif %}
                             </p>
                         </td>
                         <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                             <span
-                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if student.tracking_mode == 'subjects' %}bg-purple-100 text-purple-800{% else %}bg-green-100 text-green-800{% endif %}">
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if student.tracking_mode  ==  'subjects' %}bg-purple-100 text-purple-800{% else %}bg-green-100 text-green-800{% endif %}">
                                 {{ student.get_tracking_mode_display }}
                             </span>
                         </td>
@@ -119,9 +120,9 @@
                                 class="text-purple-600 hover:text-purple-900 font-semibold">Subjects</button>
                             {% endif %}
 
-                            <form method="post" class="inline" id="delete-student-{{ student.id }}">
+                            <form method="post" action="{% url 'delete_student' student.id %}" class="inline"
+                                id="delete-student-{{ student.id }}">
                                 {% csrf_token %}
-                                <input type="hidden" name="action" value="delete_student">
                                 <input type="hidden" name="student_id" value="{{ student.id }}">
                                 <button type="button"
                                     onclick="showDeleteModal('delete-student-{{ student.id }}', 'Are you sure you want to delete this student? All their data will be lost.')"
@@ -139,9 +140,9 @@
                                     {% for subject in student.subjects.all %}
                                     <li class="mb-1 flex items-center">
                                         <span class="mr-2">{{ subject.name }}</span>
-                                        <form method="post" class="inline" id="delete-subject-{{ subject.id }}">
+                                        <form method="post" action="{% url 'delete_subject' subject.id %}"
+                                            class="inline" id="delete-subject-{{ subject.id }}">
                                             {% csrf_token %}
-                                            <input type="hidden" name="action" value="delete_subject">
                                             <input type="hidden" name="subject_id" value="{{ subject.id }}">
                                             <button type="button"
                                                 onclick="showDeleteModal('delete-subject-{{ subject.id }}', 'Are you sure you want to delete the subject &quot;{{ subject.name|escapejs }}&quot;?')"
@@ -152,9 +153,8 @@
                                     <li class="text-gray-500 italic">No subjects added yet.</li>
                                     {% endfor %}
                                 </ul>
-                                <form method="post" class="flex items-center">
+                                <form method="post" action="{% url 'add_subject' %}" class="flex items-center">
                                     {% csrf_token %}
-                                    <input type="hidden" name="action" value="add_subject">
                                     <input type="hidden" name="student_id" value="{{ student.id }}">
                                     <input type="text" name="subject_name" placeholder="New Subject Name" required
                                         class="shadow appearance-none border rounded py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm mr-2">
@@ -167,9 +167,8 @@
                     {% endif %}
                     <tr id="edit-row-{{ student.id }}" style="display: none;">
                         <td colspan="4" class="px-5 py-5 border-b border-gray-200 bg-gray-50 text-sm">
-                            <form method="post" class="w-full">
+                            <form method="post" action="{% url 'add_edit_student' %}" class="w-full">
                                 {% csrf_token %}
-                                <input type="hidden" name="action" value="add_edit_student">
                                 <input type="hidden" name="student_id" value="{{ student.id }}">
 
                                 <div class="grid grid-cols-2 gap-4 mb-3">
@@ -285,9 +284,8 @@
         <div id="day-form-container" class="mt-4" style="display: none;">
             <div class="bg-gray-100 p-4 rounded-lg border border-gray-300">
                 <h3 class="font-bold text-lg mb-4" id="day-form-title">Log School Day</h3>
-                <form method="post" id="day-form">
+                <form method="post" action="{% url 'add_edit_school_day' %}" id="day-form">
                     {% csrf_token %}
-                    <input type="hidden" name="action" value="add_edit_day">
                     <input type="hidden" id="day_id" name="day_id" value="">
 
                     <div class="mb-4">
@@ -345,9 +343,8 @@
     <div class="bg-white rounded-lg shadow-lg p-6">
         <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2" id="form-title">Add New Student</h2>
 
-        <form method="post">
+        <form method="post" action="{% url 'add_edit_student' %}">
             {% csrf_token %}
-            <input type="hidden" name="action" value="add_edit_student">
             <input type="hidden" name="student_id" id="student_id">
 
             <div class="mb-4">
@@ -525,7 +522,7 @@
         document.getElementById('view-student').innerText = studentName;
 
         const notesObj = document.getElementById('view-notes');
-        if (notes && notes.trim() !== "") {
+        if (notes && notes.trim() ! ==  "") {
             notesObj.innerText = notes;
             notesObj.classList.remove('italic');
         } else {
@@ -534,7 +531,7 @@
         }
 
         const subjectsObj = document.getElementById('view-subjects');
-        if (subjects && subjects.trim() !== "") {
+        if (subjects && subjects.trim() ! ==  "") {
             subjectsObj.innerText = subjects;
             subjectsObj.classList.remove('italic');
         } else {
