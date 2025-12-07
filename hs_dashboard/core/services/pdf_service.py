@@ -31,7 +31,7 @@ def prepare_compliance_data(student, start_date, end_date):
     # Map dates to subjects for O(1) lookup
     # attendance_map = { date: [subject_names] }
     attendance_map = {
-        day.date: [s.name for s in day.subjects.all()] 
+        day.date: [s.display_name for s in day.subjects.all()] 
         for day in school_days
     }
     

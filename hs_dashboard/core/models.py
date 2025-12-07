@@ -83,12 +83,31 @@ class Student(models.Model):
             return self.custom_grade_level
         return self.grade_level
 
-class Subject(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='subjects')
-    name = models.CharField(max_length=100)
+class GlobalSubject(models.Model):
+    """Standardized subjects shared across all students for consistent reporting."""
+    name = models.CharField(max_length=100, unique=True)
     
     def __str__(self):
-        return f"{self.name} ({self.student.name})"
+        return self.name
+    
+    class Meta:
+        ordering = ['name']
+
+
+class Subject(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='subjects')
+    global_subject = models.ForeignKey(GlobalSubject, on_delete=models.PROTECT, null=True, blank=True)
+    name = models.CharField(max_length=100, blank=True, null=True)
+    
+    @property
+    def display_name(self):
+        """Returns the global subject name if linked, otherwise the custom name."""
+        if self.global_subject:
+            return self.global_subject.name
+        return self.name
+    
+    def __str__(self):
+        return f"{self.display_name} ({self.student.name})"
 
 class SchoolDay(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='school_days')

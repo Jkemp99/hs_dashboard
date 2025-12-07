@@ -136,13 +136,13 @@
                                 <ul class="list-disc pl-5 mb-4">
                                     {% for subject in student.subjects.all %}
                                     <li class="mb-1 flex items-center">
-                                        <span class="mr-2">{{ subject.name }}</span>
+                                        <span class="mr-2">{{ subject.display_name }}</span>
                                         <form method="post" action="{% url 'delete_subject' subject.id %}"
                                             class="inline" id="delete-subject-{{ subject.id }}">
                                             {% csrf_token %}
                                             <input type="hidden" name="subject_id" value="{{ subject.id }}">
                                             <button type="button"
-                                                onclick="showDeleteModal('delete-subject-{{ subject.id }}', 'Are you sure you want to delete the subject &quot;{{ subject.name|escapejs }}&quot;?')"
+                                                onclick="showDeleteModal('delete-subject-{{ subject.id }}', 'Are you sure you want to delete the subject &quot;{{ subject.display_name|escapejs }}&quot;?')"
                                                 class="text-red-500 hover:text-red-700 text-xs">x</button>
                                         </form>
                                     </li>
@@ -150,11 +150,22 @@
                                     <li class="text-gray-500 italic">No subjects added yet.</li>
                                     {% endfor %}
                                 </ul>
-                                <form method="post" action="{% url 'add_subject' %}" class="flex items-center">
+                                <form method="post" action="{% url 'add_subject' %}"
+                                    class="flex items-center flex-wrap gap-2">
                                     {% csrf_token %}
                                     <input type="hidden" name="student_id" value="{{ student.id }}">
-                                    <input type="text" name="subject_name" placeholder="New Subject Name" required
-                                        class="shadow appearance-none border rounded py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm mr-2">
+                                    <select name="global_subject_id" id="subject_select_{{ student.id }}"
+                                        onchange="toggleCustomSubject({{ student.id }})"
+                                        class="shadow border rounded py-1 px-2 text-gray-700 text-sm">
+                                        <option value="">-- Select Subject --</option>
+                                        {% for gs in global_subjects %}
+                                        <option value="{{ gs.id }}">{{ gs.name }}</option>
+                                        {% endfor %}
+                                        <option value="custom">Other / Custom</option>
+                                    </select>
+                                    <input type="text" name="custom_name" id="custom_subject_{{ student.id }}"
+                                        placeholder="Custom Subject Name" style="display: none;"
+                                        class="shadow border rounded py-1 px-2 text-gray-700 text-sm">
                                     <button type="submit"
                                         class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-1 px-3 rounded text-xs">Add</button>
                                 </form>
@@ -652,6 +663,20 @@
 
         // Set date to today
         document.getElementById('day_date').value = new Date().toISOString().split('T')[0];
+    }
+
+    // Global Subject Toggle
+    function toggleCustomSubject(studentId) {
+        const select = document.getElementById('subject_select_' + studentId);
+        const customInput = document.getElementById('custom_subject_' + studentId);
+        if (select.value === 'custom') {
+            customInput.style.display = 'inline-block';
+            customInput.required = true;
+        } else {
+            customInput.style.display = 'none';
+            customInput.required = false;
+            customInput.value = '';
+        }
     }
 </script>
 {% endblock %}

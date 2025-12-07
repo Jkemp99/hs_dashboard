@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from datetime import date
-from .models import Student, SchoolDay, Subject, WorkSample
+from .models import Student, SchoolDay, Subject, WorkSample, GlobalSubject
 from django.db.models import Count, Prefetch
 from django.http import HttpResponse, FileResponse
 from django.db import IntegrityError
@@ -97,7 +97,7 @@ def portfolio_view(request):
         
         logs_by_date[date_obj].append({
             'student': log.student.name,
-            'subjects': [s.name for s in log.subjects.all()], 
+            'subjects': [s.display_name for s in log.subjects.all()], 
             'notes': log.notes
         })
     
@@ -135,7 +135,7 @@ def portfolio_view(request):
     student_subjects_map = {}
     for student in all_students:
         # Get DB subjects
-        db_subjects = set(s.name for s in student.subjects.all())
+        db_subjects = set(s.display_name for s in student.subjects.all())
         
         # Get Default subjects based on grade
         if not student.custom_grade_level:
@@ -237,9 +237,27 @@ def add_edit_student(request):
 def add_subject(request):
     if request.method == 'POST':
         student_id = request.POST.get('student_id')
-        subject_name = request.POST.get('subject_name')
+        global_subject_id = request.POST.get('global_subject_id')
+        custom_name = request.POST.get('custom_name', '').strip()
+        
         student = get_object_or_404(Student, id=student_id, user=request.user)
-        Subject.objects.create(student=student, name=subject_name)
+        
+        if global_subject_id and global_subject_id != 'custom':
+            # Check if student already has this global subject
+            exists = Subject.objects.filter(
+                student=student, 
+                global_subject_id=global_subject_id
+            ).exists()
+            if not exists:
+                Subject.objects.create(student=student, global_subject_id=global_subject_id)
+        elif custom_name:
+            # Check for existing custom subject with same name
+            exists = Subject.objects.filter(
+                student=student,
+                name__iexact=custom_name
+            ).exists()
+            if not exists:
+                Subject.objects.create(student=student, name=custom_name)
     return redirect('settings')
 
 @login_required
@@ -266,19 +284,37 @@ def add_edit_school_day(request):
             day.notes = request.POST.get('notes')
             day.save()
             
-            # Update subjects
+            # Update subjects with GlobalSubject-aware resolution
             subject_objs = []
             for s_name in subjects_list:
-                subj, _ = Subject.objects.get_or_create(student=student, name=s_name)
-                subject_objs.append(subj)
+                if s_name:
+                    subj = Subject.objects.filter(student=student, global_subject__name__iexact=s_name).first()
+                    if not subj:
+                        subj = Subject.objects.filter(student=student, name__iexact=s_name).first()
+                    if not subj:
+                        global_subj = GlobalSubject.objects.filter(name__iexact=s_name).first()
+                        if global_subj:
+                            subj = Subject.objects.create(student=student, global_subject=global_subj)
+                        else:
+                            subj = Subject.objects.create(student=student, name=s_name)
+                    subject_objs.append(subj)
             day.subjects.set(subject_objs)
         else:
             day = SchoolDay.objects.create(student=student, date=date_str)
             subjects_list = request.POST.getlist('subjects_completed')
-            # Add subjects
+            # Add subjects with GlobalSubject-aware resolution
             for s_name in subjects_list:
-                subj, _ = Subject.objects.get_or_create(student=student, name=s_name)
-                day.subjects.add(subj)
+                if s_name:
+                    subj = Subject.objects.filter(student=student, global_subject__name__iexact=s_name).first()
+                    if not subj:
+                        subj = Subject.objects.filter(student=student, name__iexact=s_name).first()
+                    if not subj:
+                        global_subj = GlobalSubject.objects.filter(name__iexact=s_name).first()
+                        if global_subj:
+                            subj = Subject.objects.create(student=student, global_subject=global_subj)
+                        else:
+                            subj = Subject.objects.create(student=student, name=s_name)
+                    day.subjects.add(subj)
         
         next_url = request.GET.get('next') or request.POST.get('next')
         if next_url:
@@ -349,6 +385,9 @@ def settings_view(request):
     # Get all Associations
     from .models import Association
     associations = Association.objects.all()
+    
+    # Get all GlobalSubjects for the subject dropdown
+    global_subjects = GlobalSubject.objects.all()
 
     return render(request, 'core/settings.html', {
         'students': students, 
@@ -363,6 +402,7 @@ def settings_view(request):
         'next_month': next_month,
         'next_year': next_year,
         'associations': associations,
+        'global_subjects': global_subjects,
     })
 
 @login_required
@@ -444,8 +484,18 @@ def log_school_day(request):
             if subjects_completed:
                 for s_name in subjects_completed:
                     if s_name:
-                         subj, _ = Subject.objects.get_or_create(student=student, name=s_name)
-                         day.subjects.add(subj)
+                        # Try to find existing subject for this student
+                        subj = Subject.objects.filter(student=student, global_subject__name__iexact=s_name).first()
+                        if not subj:
+                            subj = Subject.objects.filter(student=student, name__iexact=s_name).first()
+                        if not subj:
+                            # Check if matches a GlobalSubject
+                            global_subj = GlobalSubject.objects.filter(name__iexact=s_name).first()
+                            if global_subj:
+                                subj = Subject.objects.create(student=student, global_subject=global_subj)
+                            else:
+                                subj = Subject.objects.create(student=student, name=s_name)
+                        day.subjects.add(subj)
         except IntegrityError:
             # Handle duplicate date (silently fail or return error - simple return for now)
             # ideally we return an error message to HTMX
@@ -495,8 +545,18 @@ def bulk_log_school_day(request):
                 if subjects:
                     for s_name in subjects:
                         if s_name:
-                             subj, _ = Subject.objects.get_or_create(student=student, name=s_name)
-                             day.subjects.add(subj)
+                            # Try to find existing subject for this student
+                            subj = Subject.objects.filter(student=student, global_subject__name__iexact=s_name).first()
+                            if not subj:
+                                subj = Subject.objects.filter(student=student, name__iexact=s_name).first()
+                            if not subj:
+                                # Check if matches a GlobalSubject
+                                global_subj = GlobalSubject.objects.filter(name__iexact=s_name).first()
+                                if global_subj:
+                                    subj = Subject.objects.create(student=student, global_subject=global_subj)
+                                else:
+                                    subj = Subject.objects.create(student=student, name=s_name)
+                            day.subjects.add(subj)
             
             # SchoolDay.objects.bulk_create(school_days) # Removed in favor of loop for M2M
             
