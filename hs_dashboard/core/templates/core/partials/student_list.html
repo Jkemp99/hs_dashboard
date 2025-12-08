@@ -118,8 +118,7 @@
                                     onchange="toggleInlineCustomGrade({{ student.id }})"
                                     class="shadow border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm">
                                     {% for code, name in grade_choices %}
-                                    <option value="{{ code }}" {% if student.grade_level == code %}selected{% endif %}>{{
-                                        name }}</option>
+                                    <option value="{{ code }}" {% if student.grade_level == code %}selected{% endif %}>{{ name }}</option>
                                     {% endfor %}
                                 </select>
                                 <div id="custom_grade_container_{{ student.id }}" class="mt-2"
@@ -196,6 +195,7 @@
                                         November</option>
                                     <option value="12" {% if student.academic_year_end_month == 12 %}selected{% endif %}>
                                         December</option>
+                                </select>
                             </div>
                         </div>
 
