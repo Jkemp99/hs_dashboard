@@ -332,7 +332,7 @@
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div
                 class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <form method="post" action="{% url 'settings' %}">
+                <form method="post" action="{% url 'add_edit_school_day' %}">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="add_edit_day">
                     <input type="hidden" name="day_id" id="edit_day_id">
@@ -404,16 +404,8 @@
             document.getElementById('edit_day_date').value = date;
             document.getElementById('edit_day_notes').value = notes || '';
 
-            // Parse completed subjects if it's a string (from template)
-            let completed = [];
-            if (typeof completedSubjects === 'string') {
-                // Remove brackets and quotes to parse simple list string '[&#x27;Math&#x27;, ...]'
-                // Actually, assuming it's passed as a JS array or we parse it carefully
-                // Simplest is to pass it as a JS list literal from the template
-                completed = JSON.parse(completedSubjects.replace(/'/g, '"'));
-            } else if (Array.isArray(completedSubjects)) {
-                completed = completedSubjects;
-            }
+            // completedSubjects is already a JavaScript array from the template
+            const completed = Array.isArray(completedSubjects) ? completedSubjects : [];
 
             // Populate Subjects Checkboxes
             const container = document.getElementById('edit_subjects_container');
