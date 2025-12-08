@@ -108,7 +108,7 @@ class SchoolDay(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='school_days')
     date = models.DateField(default=timezone.now)
     notes = models.TextField(blank=True, null=True)
-    notes = models.TextField(blank=True, null=True)
+
     subjects = models.ManyToManyField(Subject, blank=True, related_name='school_days')
     # subjects_completed removed
     created_at = models.DateTimeField(auto_now_add=True)

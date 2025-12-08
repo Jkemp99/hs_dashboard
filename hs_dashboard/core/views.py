@@ -268,6 +268,26 @@ def delete_subject(request, subject_id):
     return redirect('settings')
 
 @login_required
+def initialize_subjects(request, student_id):
+    student = get_object_or_404(Student, id=student_id, user=request.user)
+    required_subjects = get_required_subjects(student.grade_level)
+    
+    for subject_name in required_subjects:
+        # Find matching GlobalSubject
+        global_subj = GlobalSubject.objects.filter(name__iexact=subject_name).first()
+        
+        if global_subj:
+            # Check if already exists to avoid duplicates
+            if not Subject.objects.filter(student=student, global_subject=global_subj).exists():
+                Subject.objects.create(student=student, global_subject=global_subj)
+        else:
+            # Fallback to custom name if no global match found
+            if not Subject.objects.filter(student=student, name__iexact=subject_name).exists():
+                Subject.objects.create(student=student, name=subject_name)
+                
+    return redirect('settings')
+
+@login_required
 def add_edit_school_day(request):
     if request.method == 'POST':
         day_id = request.POST.get('day_id')
@@ -325,7 +345,12 @@ def add_edit_school_day(request):
 def settings_view(request):
         
     # Display students
-    students = Student.objects.filter(user=request.user)
+    # Display students with subject count annotation
+    students = Student.objects.filter(user=request.user).annotate(subject_count=Count('subjects'))
+    
+    # Add helper attribute for template
+    for student in students:
+        student.has_subjects = student.subject_count > 0
     
     # Display recent attendance history (last 50 records)
     school_days = SchoolDay.objects.filter(student__user=request.user).select_related('student').prefetch_related('subjects').order_by('-date', '-created_at')[:50]

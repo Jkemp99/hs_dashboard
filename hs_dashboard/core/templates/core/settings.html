@@ -42,13 +42,9 @@
                         <option value="">No Association Selected</option>
 
                         {% for assoc in associations %}
-                        <option value="{{ assoc.id }}" {% if user.profile.association.id == assoc.id %}selected{% endif %}>
+                        <option value="{{ assoc.id }}" {% if user.profile.association.id  ==  assoc.id %}selected{% endif %}>
                             {{ assoc.name }} (Required Days: {{ assoc.required_days }})
                         </option>
-
-
-
-
                         {% endfor %}
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
@@ -87,6 +83,10 @@
                         </th>
                         <th
                             class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Subjects
+                        </th>
+                        <th
+                            class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                             Actions
                         </th>
                     </tr>
@@ -102,13 +102,23 @@
                                 {{ student.display_grade }}
                             </p>
                         </td>
+                        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                            {% if student.has_subjects %}
+                            <button onclick="manageSubjects('{{ student.id|escapejs }}', '{{ student.name|escapejs }}')"
+                                class="bg-purple-100 hover:bg-purple-200 text-purple-700 font-semibold py-1 px-3 rounded text-xs border border-purple-300">
+                                Manage ({{ student.subject_count }})
+                            </button>
+                            {% else %}
+                            <a href="{% url 'initialize_subjects' student.id %}"
+                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-xs no-underline">
+                                Auto-Fill Defaults
+                            </a>
+                            {% endif %}
+                        </td>
                         <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm flex items-center space-x-2">
                             <button type="button"
                                 onclick="var row = document.getElementById('edit-row-{{ student.id }}'); row.style.display = row.style.display === 'none' ? 'table-row' : 'none';"
                                 class="text-blue-600 hover:text-blue-900 font-semibold">Edit</button>
-
-                            <button onclick="manageSubjects('{{ student.id|escapejs }}', '{{ student.name|escapejs }}')"
-                                class="text-purple-600 hover:text-purple-900 font-semibold">Subjects</button>
 
                             <form method="post" action="{% url 'delete_student' student.id %}" class="inline"
                                 id="delete-student-{{ student.id }}">
@@ -182,9 +192,7 @@
                                             onchange="toggleInlineCustomGrade({{ student.id }})"
                                             class="shadow border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm">
                                             {% for code, name in grade_choices %}
-                                            <option value="{{ code }}" {% if student.grade_level == code %}selected{% endif %}>{{ name }}</option>
-
-
+                                            <option value="{{ code }}" {% if student.grade_level  ==  code %}selected{% endif %}>{{ name }}</option>
                                             {% endfor %}
                                         </select>
                                         <div id="custom_grade_container_{{ student.id }}" class="mt-2"
@@ -261,7 +269,7 @@
         {% endif %}
     </div>
 
-    <!-- Manual Attendance Entry -->
+    <!-- Manage Attendance Entry -->
     <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
         <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Manage Attendance</h2>
 
@@ -502,7 +510,7 @@
         document.getElementById('view-student').innerText = studentName;
 
         const notesObj = document.getElementById('view-notes');
-        if (notes && notes.trim()! == "") {
+        if (notes && notes.trim() !== "") {
             notesObj.innerText = notes;
             notesObj.classList.remove('italic');
         } else {
@@ -511,7 +519,7 @@
         }
 
         const subjectsObj = document.getElementById('view-subjects');
-        if (subjects && subjects.trim()! == "") {
+        if (subjects && subjects.trim() !== "") {
             subjectsObj.innerText = subjects;
             subjectsObj.classList.remove('italic');
         } else {
