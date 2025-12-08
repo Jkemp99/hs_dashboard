@@ -207,7 +207,7 @@ def add_edit_student(request):
         name = request.POST.get('name')
         grade_level = request.POST.get('grade_level')
         custom_grade = request.POST.get('custom_grade_level')
-        tracking_mode = request.POST.get('tracking_mode', 'attendance')
+
         academic_year_start_month = request.POST.get('academic_year_start_month')
         academic_year_end_month = request.POST.get('academic_year_end_month')
         student_id = request.POST.get('student_id')
@@ -217,7 +217,7 @@ def add_edit_student(request):
             student.name = name
             student.grade_level = grade_level
             student.custom_grade_level = custom_grade
-            student.tracking_mode = tracking_mode
+
             if academic_year_start_month:
                 student.academic_year_start_month = int(academic_year_start_month)
             if academic_year_end_month:
@@ -225,7 +225,7 @@ def add_edit_student(request):
             student.save()
         else:
             user = request.user
-            student = Student(user=user, name=name, grade_level=grade_level, custom_grade_level=custom_grade, tracking_mode=tracking_mode)
+            student = Student(user=user, name=name, grade_level=grade_level, custom_grade_level=custom_grade)
             if academic_year_start_month:
                 student.academic_year_start_month = int(academic_year_start_month)
             if academic_year_end_month:

@@ -40,10 +40,15 @@
                     <select name="association_id" id="association_id"
                         class="block appearance-none w-full bg-white border border-gray-400 hover:border-gray-500 px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline">
                         <option value="">No Association Selected</option>
+
                         {% for assoc in associations %}
                         <option value="{{ assoc.id }}" {% if user.profile.association.id == assoc.id %}selected{% endif %}>
                             {{ assoc.name }} (Required Days: {{ assoc.required_days }})
                         </option>
+
+
+
+
                         {% endfor %}
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
@@ -82,10 +87,6 @@
                         </th>
                         <th
                             class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Tracking Mode
-                        </th>
-                        <th
-                            class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                             Actions
                         </th>
                     </tr>
@@ -101,21 +102,13 @@
                                 {{ student.display_grade }}
                             </p>
                         </td>
-                        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                            <span
-                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if student.tracking_mode  ==  'subjects' %}bg-purple-100 text-purple-800{% else %}bg-green-100 text-green-800{% endif %}">
-                                {{ student.get_tracking_mode_display }}
-                            </span>
-                        </td>
                         <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm flex items-center space-x-2">
                             <button type="button"
                                 onclick="var row = document.getElementById('edit-row-{{ student.id }}'); row.style.display = row.style.display === 'none' ? 'table-row' : 'none';"
                                 class="text-blue-600 hover:text-blue-900 font-semibold">Edit</button>
 
-                            {% if student.is_subject_tracking %}
                             <button onclick="manageSubjects('{{ student.id|escapejs }}', '{{ student.name|escapejs }}')"
                                 class="text-purple-600 hover:text-purple-900 font-semibold">Subjects</button>
-                            {% endif %}
 
                             <form method="post" action="{% url 'delete_student' student.id %}" class="inline"
                                 id="delete-student-{{ student.id }}">
@@ -127,8 +120,7 @@
                             </form>
                         </td>
                     </tr>
-                    <!-- Subjects List (Hidden by default, shown via JS or simple toggle) -->
-                    {% if student.is_subject_tracking %}
+                    <!-- Subjects List Row -->
                     <tr id="subjects-row-{{ student.id }}" style="display: none;">
                         <td colspan="4" class="px-5 py-5 border-b border-gray-200 bg-gray-50 text-sm">
                             <div class="pl-4">
@@ -172,7 +164,6 @@
                             </div>
                         </td>
                     </tr>
-                    {% endif %}
                     <tr id="edit-row-{{ student.id }}" style="display: none;">
                         <td colspan="4" class="px-5 py-5 border-b border-gray-200 bg-gray-50 text-sm">
                             <form method="post" action="{% url 'add_edit_student' %}" class="w-full">
@@ -192,6 +183,8 @@
                                             class="shadow border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm">
                                             {% for code, name in grade_choices %}
                                             <option value="{{ code }}" {% if student.grade_level == code %}selected{% endif %}>{{ name }}</option>
+
+
                                             {% endfor %}
                                         </select>
                                         <div id="custom_grade_container_{{ student.id }}" class="mt-2"
@@ -243,15 +236,6 @@
                                             <option value="12" {% if student.academic_year_end_month == 12 %}selected{% endif %}>December</option>
                                         </select>
                                     </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="block text-gray-700 text-xs font-bold mb-1">Tracking Mode</label>
-                                    <select name="tracking_mode"
-                                        class="shadow border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm">
-                                        <option value="attendance">Attendance Only</option>
-                                        <option value="subjects">Subjects</option>
-                                    </select>
                                 </div>
 
                                 <div class="flex items-center justify-end space-x-2">
@@ -386,15 +370,6 @@
                     id="custom_grade_level" name="custom_grade_level" type="text">
             </div>
 
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2">Tracking Mode</label>
-                <select id="tracking_mode" name="tracking_mode"
-                    class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                    <option value="attendance">Attendance Only</option>
-                    <option value="subjects">Subjects</option>
-                </select>
-            </div>
-
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div>
                     <label class="block text-gray-700 text-xs font-bold mb-1">Academic Year Start</label>
@@ -451,9 +426,6 @@
                     </select>
                 </div>
             </div>
-            <p class="text-xs text-gray-500 mt-1">"Subjects" mode allows you to track specific subjects for each
-                day.</p>
-
 
             <div class="flex items-center justify-between">
                 <button
@@ -615,7 +587,6 @@
         document.getElementById('name').value = '';
         document.getElementById('grade_level').value = '1st Grade';
         document.getElementById('custom_grade_level').value = '';
-        document.getElementById('tracking_mode').value = 'attendance';
         document.getElementById('academic_year_start_month').value = '8';
         document.getElementById('academic_year_end_month').value = '7';
         toggleCustomGrade();

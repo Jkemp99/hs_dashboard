@@ -55,12 +55,6 @@ class Student(models.Model):
     grade_level = models.CharField(max_length=50, choices=GRADE_CHOICES, default='1st Grade')
     custom_grade_level = models.CharField(max_length=50, blank=True, null=True, help_text="Enter grade if 'Other' is selected")
     
-    TRACKING_MODES = [
-        ('attendance', 'Attendance Only'),
-        ('subjects', 'Subjects'),
-    ]
-    tracking_mode = models.CharField(max_length=20, choices=TRACKING_MODES, default='attendance')
-
     academic_year_start_month = models.PositiveSmallIntegerField(default=8, help_text="Start month (1-12)")
     academic_year_end_month = models.PositiveSmallIntegerField(default=7, help_text="End month (1-12)")
 
@@ -75,7 +69,8 @@ class Student(models.Model):
 
     @property
     def is_subject_tracking(self):
-        return self.tracking_mode == 'subjects'
+        """All students now track subjects by default."""
+        return True
 
     @property
     def display_grade(self):
