@@ -450,6 +450,7 @@ def dashboard(request):
         days_completed_count=Count('school_days')
     ).prefetch_related(
         'subjects',
+        'subjects__global_subject',
         Prefetch('work_samples', queryset=WorkSample.objects.order_by('-date_uploaded'))
     )
     
@@ -460,7 +461,15 @@ def dashboard(request):
         progress_percentage = min(100, int((days_completed / 180) * 100))
         days_remaining = max(0, 180 - days_completed)
         
-        required_subjects = get_required_subjects(student.grade_level)
+        # Get explicitly assigned subjects
+        db_subjects = [s.display_name for s in student.subjects.all()]
+        
+        # If student has assigned subjects, use them
+        if db_subjects:
+            required_subjects = sorted(list(set(db_subjects)))
+        else:
+             # Fallback to default if no subjects assigned
+             required_subjects = get_required_subjects(student.grade_level)
         
         # Calculate 6-week compliance window
         six_weeks_ago = timezone.now().date() - timezone.timedelta(days=42)
