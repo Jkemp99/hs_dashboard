@@ -184,6 +184,7 @@ def portfolio_view(request):
         'student_subjects_map': student_subjects_map,
         'selected_sample_year': selected_year_val,
         'selected_sample_month': selected_month_val,
+        'students': all_students,
     })
 
 @login_required
@@ -653,68 +654,95 @@ def download_report(request):
     student = get_object_or_404(Student, id=student_id, user=request.user)
 
     # Determine Academic Year dynamically
-    today = timezone.now().date()
+    # Determine Academic Year dynamically
     start_month = student.academic_year_start_month or 8
     end_month = student.academic_year_end_month or 7
     
-    # 1. Calculate Initial Range
-    if start_month <= end_month:
-        start_year = today.year
-        end_year = today.year
-        academic_year_label = f"{start_year}"
-    else:
-        if today.month >= start_month:
-             start_year = today.year
-             end_year = today.year + 1
-        elif today.month <= end_month:
-             start_year = today.year - 1
-             end_year = today.year
-        else:
-            if today.month < start_month: 
-                start_year = today.year
-                end_year = today.year + 1
-            else:
-                start_year = today.year
-                end_year = today.year + 1
-        academic_year_label = f"{start_year}-{end_year}"
-
     import calendar
-    _, last_day = calendar.monthrange(end_year, end_month)
-    start_date = date(start_year, start_month, 1)
-    end_date = date(end_year, end_month, last_day)
-
-    # 2. Check for Data & Apply Fallback if Needed
-    has_data = SchoolDay.objects.filter(student=student, date__range=[start_date, end_date]).exists()
-
-    if not has_data:
-        # Fallback: Find the last logged day and base year on that
-        last_logged = SchoolDay.objects.filter(student=student).order_by('-date').first()
-        if last_logged:
-            ref_date = last_logged.date
+    
+    # Check for specific year request
+    requested_year = request.GET.get('year')
+    
+    if requested_year:
+        start_year = int(requested_year)
+        # Calculate end_year based on months
+        if start_month > end_month:
+            end_year = start_year + 1
+        else:
+            end_year = start_year
             
-            if start_month <= end_month:
-                start_year = ref_date.year
-                end_year = ref_date.year
-                academic_year_label = f"{start_year}"
+        # Set Label
+        if start_year != end_year:
+            academic_year_label = f"{start_year}-{end_year}"
+        else:
+            academic_year_label = f"{start_year}"
+            
+        # Set Dates
+        _, last_day = calendar.monthrange(end_year, end_month)
+        start_date = date(start_year, start_month, 1)
+        end_date = date(end_year, end_month, last_day)
+        
+    else:
+        # Fallback to Auto-Detect logic
+        today = timezone.now().date()
+        
+        # 1. Calculate Initial Range
+        if start_month <= end_month:
+            start_year = today.year
+            end_year = today.year
+            academic_year_label = f"{start_year}"
+        else:
+            if today.month >= start_month:
+                 start_year = today.year
+                 end_year = today.year + 1
+            elif today.month <= end_month:
+                 start_year = today.year - 1
+                 end_year = today.year
             else:
-                if ref_date.month >= start_month:
-                     start_year = ref_date.year
-                     end_year = ref_date.year + 1
-                elif ref_date.month <= end_month:
-                     start_year = ref_date.year - 1
-                     end_year = ref_date.year
+                if today.month < start_month: 
+                    start_year = today.year
+                    end_year = today.year + 1
                 else:
-                    if ref_date.month < start_month: 
-                        start_year = ref_date.year
-                        end_year = ref_date.year + 1
-                    else:
-                        start_year = ref_date.year
-                        end_year = ref_date.year + 1
-                academic_year_label = f"{start_year}-{end_year}"
+                    start_year = today.year
+                    end_year = today.year + 1
+            academic_year_label = f"{start_year}-{end_year}"
+    
+        _, last_day = calendar.monthrange(end_year, end_month)
+        start_date = date(start_year, start_month, 1)
+        end_date = date(end_year, end_month, last_day)
+    
+        # 2. Check for Data & Apply Fallback if Needed
+        has_data = SchoolDay.objects.filter(student=student, date__range=[start_date, end_date]).exists()
+    
+        if not has_data:
+            # Fallback: Find the last logged day and base year on that
+            last_logged = SchoolDay.objects.filter(student=student).order_by('-date').first()
+            if last_logged:
+                ref_date = last_logged.date
                 
-            _, last_day = calendar.monthrange(end_year, end_month)
-            start_date = date(start_year, start_month, 1)
-            end_date = date(end_year, end_month, last_day)
+                if start_month <= end_month:
+                    start_year = ref_date.year
+                    end_year = ref_date.year
+                    academic_year_label = f"{start_year}"
+                else:
+                    if ref_date.month >= start_month:
+                         start_year = ref_date.year
+                         end_year = ref_date.year + 1
+                    elif ref_date.month <= end_month:
+                         start_year = ref_date.year - 1
+                         end_year = ref_date.year
+                    else:
+                        if ref_date.month < start_month: 
+                            start_year = ref_date.year
+                            end_year = ref_date.year + 1
+                        else:
+                            start_year = ref_date.year
+                            end_year = ref_date.year + 1
+                    academic_year_label = f"{start_year}-{end_year}"
+                    
+                _, last_day = calendar.monthrange(end_year, end_month)
+                start_date = date(start_year, start_month, 1)
+                end_date = date(end_year, end_month, last_day)
 
     # 3. Call Async Task (Synchronously for now)
     # TODO: Switch to .delay() once Redis is fully configured
