@@ -231,7 +231,20 @@ def add_edit_student(request):
             if academic_year_end_month:
                 student.academic_year_end_month = int(academic_year_end_month)
             student.save()
-    return redirect('settings')
+            student.save()
+    
+    # HTMX: Return updated student list
+    students = Student.objects.filter(user=request.user).annotate(subject_count=Count('subjects'))
+    for student in students:
+        student.has_subjects = student.subject_count > 0
+        
+    global_subjects = GlobalSubject.objects.all()
+    
+    return render(request, 'core/partials/student_list.html', {
+        'students': students,
+        'grade_choices': Student.GRADE_CHOICES,
+        'global_subjects': global_subjects,
+    })
 
 @login_required
 def add_subject(request):
@@ -604,8 +617,20 @@ def delete_school_day(request, day_id):
 def delete_student(request, student_id):
     student = get_object_or_404(Student, id=student_id, user=request.user)
     student.delete()
-    return redirect('settings')
-    return redirect('dashboard')
+    student.delete()
+    
+    # HTMX: Return updated student list
+    students = Student.objects.filter(user=request.user).annotate(subject_count=Count('subjects'))
+    for student in students:
+        student.has_subjects = student.subject_count > 0
+        
+    global_subjects = GlobalSubject.objects.all()
+    
+    return render(request, 'core/partials/student_list.html', {
+        'students': students,
+        'grade_choices': Student.GRADE_CHOICES,
+        'global_subjects': global_subjects,
+    })
 
 # PDF Imports
 
