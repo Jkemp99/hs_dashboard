@@ -7,7 +7,7 @@ from django.db.models import Count, Prefetch
 from django.http import HttpResponse, FileResponse
 from django.db import IntegrityError
 
-from .utils import get_required_subjects
+from .utils import get_required_subjects, render_to_pdf
 
 from django.utils.text import slugify
 
@@ -761,6 +761,123 @@ def download_report(request):
         return HttpResponse("Error generating PDF: No content returned", status=500)
     except Exception as e:
         return HttpResponse(f"Error generating PDF: {str(e)}", status=500)
+
+
+@login_required
+def download_portfolio(request):
+    student_id = request.GET.get('student_id')
+    student = get_object_or_404(Student, id=student_id, user=request.user)
+
+    # Determine Academic Year dynamically (Same logic as download_report)
+    start_month = student.academic_year_start_month or 8
+    end_month = student.academic_year_end_month or 7
+    
+    import calendar
+    
+    # Check for specific year request
+    requested_year = request.GET.get('year')
+    
+    if requested_year:
+        start_year = int(requested_year)
+        # Calculate end_year based on months
+        if start_month > end_month:
+            end_year = start_year + 1
+        else:
+            end_year = start_year
+            
+        if start_year != end_year:
+            academic_year_label = f"{start_year}-{end_year}"
+        else:
+            academic_year_label = f"{start_year}"
+            
+        _, last_day = calendar.monthrange(end_year, end_month)
+        start_date = date(start_year, start_month, 1)
+        end_date = date(end_year, end_month, last_day)
+        
+    else:
+        # Fallback to Auto-Detect logic
+        today = timezone.now().date()
+        
+        if start_month <= end_month:
+            start_year = today.year
+            end_year = today.year
+            academic_year_label = f"{start_year}"
+        else:
+            if today.month >= start_month:
+                 start_year = today.year
+                 end_year = today.year + 1
+            elif today.month <= end_month:
+                 start_year = today.year - 1
+                 end_year = today.year
+            else:
+                if today.month < start_month: 
+                    start_year = today.year
+                    end_year = today.year + 1
+                else:
+                    start_year = today.year
+                    end_year = today.year + 1
+            academic_year_label = f"{start_year}-{end_year}"
+    
+        _, last_day = calendar.monthrange(end_year, end_month)
+        start_date = date(start_year, start_month, 1)
+        end_date = date(end_year, end_month, last_day)
+    
+        # Check for Data & Apply Fallback if Needed (checking samples instead of school_days)
+        has_data = WorkSample.objects.filter(student=student, date_uploaded__range=[start_date, end_date]).exists()
+    
+        if not has_data:
+            # Fallback: Find the last uploaded sample
+            last_uploaded = WorkSample.objects.filter(student=student).order_by('-date_uploaded').first()
+            if last_uploaded:
+                ref_date = last_uploaded.date_uploaded
+                
+                if start_month <= end_month:
+                    start_year = ref_date.year
+                    end_year = ref_date.year
+                    academic_year_label = f"{start_year}"
+                else:
+                    if ref_date.month >= start_month:
+                         start_year = ref_date.year
+                         end_year = ref_date.year + 1
+                    elif ref_date.month <= end_month:
+                         start_year = ref_date.year - 1
+                         end_year = ref_date.year
+                    else:
+                        if ref_date.month < start_month: 
+                            start_year = ref_date.year
+                            end_year = ref_date.year + 1
+                        else:
+                            start_year = ref_date.year
+                            end_year = ref_date.year + 1
+                    academic_year_label = f"{start_year}-{end_year}"
+                    
+                _, last_day = calendar.monthrange(end_year, end_month)
+                start_date = date(start_year, start_month, 1)
+                end_date = date(end_year, end_month, last_day)
+
+    # Query Samples
+    samples = WorkSample.objects.filter(
+        student=student,
+        date_uploaded__range=[start_date, end_date]
+    ).order_by('subject', 'date_uploaded')
+
+    context = {
+        'student': student,
+        'academic_year': academic_year_label,
+        'samples': samples,
+        'start_date': start_date,
+        'end_date': end_date,
+    }
+
+    pdf_response = render_to_pdf('pdfs/portfolio_report.html', context)
+    
+    if pdf_response.status_code == 200:
+        safe_name = slugify(student.name)
+        filename = f"Portfolio_Samples_{safe_name}_{academic_year_label}.pdf"
+        pdf_response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return pdf_response
+    else:
+        return HttpResponse("Error generating PDF", status=500)
 
 
 @login_required

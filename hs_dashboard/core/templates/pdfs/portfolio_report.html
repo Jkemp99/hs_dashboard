@@ -1,0 +1,114 @@
+{% extends "pdfs/base_pdf.html" %}
+
+{% block title %}Portfolio of Academic Work{% endblock %}
+
+{% block extra_css %}
+<style>
+    .summary-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+    .summary-table th,
+    .summary-table td {
+        border: 1px solid #000;
+        padding: 5px;
+        text-align: left;
+        font-size: 10pt;
+    }
+
+    .gallery-item {
+        margin-bottom: 30px;
+        page-break-inside: avoid;
+    }
+
+    .caption {
+        font-weight: bold;
+        margin-top: 5px;
+        font-size: 11pt;
+    }
+</style>
+{% endblock %}
+
+{% block header %}
+<h1>Portfolio of Academic Work</h1>
+<h2>Academic Year: {{ academic_year }}</h2>
+
+<table width="100%" border="0" style="margin-bottom: 20px;">
+    <tr>
+        <td width="50%" align="left" valign="middle">
+            <strong>Student Name:</strong> <span style="text-decoration: underline;">{{ student.name }}</span>
+        </td>
+        <td width="50%" align="right" valign="middle">
+            <strong>Grade:</strong> <span style="text-decoration: underline;">{{ student.display_grade }}</span>
+        </td>
+    </tr>
+</table>
+{% endblock %}
+
+{% block content %}
+<h3>Summary of Work Samples</h3>
+<table class="summary-table">
+    <thead>
+        <tr>
+            <th width="20%">Date</th>
+            <th width="30%">Subject</th>
+            <th width="50%">File Name</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for sample in samples %}
+        <tr>
+            <td>{{ sample.date_uploaded|date:"M d, Y" }}</td>
+            <td>{{ sample.subject }}</td>
+            <td>{{ sample.file.name }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3" align="center">No work samples found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<pdf:nextpage />
+
+<h3>Visual Gallery</h3>
+
+{% for sample in samples %}
+<div class="gallery-item">
+    {% if sample.is_pdf %}
+    <div style="border: 1px solid #ccc; padding: 10px; background-color: #f9f9f9;">
+        <p>[PDF Record attached separately: {{ sample.file.name }}]</p>
+    </div>
+    {% else %}
+    <img src="{{ sample.file.path }}" style="max-width: 100%; height: auto; margin-bottom: 20px;" />
+    {% endif %}
+
+    <p class="caption">{{ sample.subject }} - {{ sample.date_uploaded|date:"M d, Y" }}</p>
+</div>
+<hr style="color: #eee;" />
+<br />
+{% endfor %}
+
+{% endblock %}
+
+{% block footer_content %}
+<p><strong>Parental Certification</strong><br />
+    I certify that this portfolio of work samples is an accurate record of the student's progress and complies with the
+    requirements of South Carolina Code § 59-65-47.</p>
+
+<table width="100%" border="0" style="margin-top: 20px;">
+    <tr>
+        <td width="60%">
+            <div style="border-top: 1px solid black; margin-top: 30px; padding-top: 5px;">Parent/Guardian Signature
+            </div>
+        </td>
+        <td width="10%">&nbsp;</td>
+        <td width="30%">
+            <div style="border-top: 1px solid black; margin-top: 30px; padding-top: 5px;">Date</div>
+        </td>
+    </tr>
+</table>
+{% endblock %}
