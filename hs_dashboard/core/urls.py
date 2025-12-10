@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import dashboard, settings_view, portfolio_view, log_school_day, bulk_log_school_day, delete_school_day, delete_student, download_report, upload_work_sample, delete_work_sample, update_family_settings, add_edit_student, add_subject, delete_subject, add_edit_school_day, initialize_subjects, download_portfolio
+from .views import dashboard, settings_view, portfolio_view, log_school_day, bulk_log_school_day, delete_school_day, delete_student, download_report, upload_work_sample, delete_work_sample, update_family_settings, add_edit_student, add_subject, delete_subject, add_edit_school_day, initialize_subjects, download_portfolio, save_grade, gradebook_view
 
 urlpatterns = [
     path('', dashboard, name='dashboard'),
@@ -19,4 +19,6 @@ urlpatterns = [
     path('settings/initialize_subjects/<int:student_id>/', initialize_subjects, name='initialize_subjects'),
     path('settings/family/', update_family_settings, name='update_family_settings'),
     path('day/add_edit/', add_edit_school_day, name='add_edit_school_day'),
+    path('save_grade/', save_grade, name='save_grade'),
+    path('gradebook/<int:student_id>/', gradebook_view, name='gradebook'),
 ]

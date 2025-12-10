@@ -1,0 +1,111 @@
+{% extends 'core/dashboard.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Gradebook for {{ student.name }}</h1>
+            <p class="text-gray-600">Enter grades for each quarter.</p>
+        </div>
+        <div>
+            <a href="{% url 'portfolio' %}"
+                class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2">
+                Back to Portfolio
+            </a>
+        </div>
+    </div>
+
+    <!-- Gradebook Grid -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Subject
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                        Q1
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                        Q2
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                        Q3
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                        Q4
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for row in grade_rows %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {{ row.subject.display_name }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <input type="text" value="{{ row.q1_score }}"
+                            class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-center"
+                            hx-post="{% url 'save_grade' %}" hx-trigger="change" hx-swap="none"
+                            hx-vals='{"student_id": "{{ student.id }}", "subject_id": "{{ row.subject.id }}", "term": "Q1"}'
+                            name="score">
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <input type="text" value="{{ row.q2_score }}"
+                            class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-center"
+                            hx-post="{% url 'save_grade' %}" hx-trigger="change" hx-swap="none"
+                            hx-vals='{"student_id": "{{ student.id }}", "subject_id": "{{ row.subject.id }}", "term": "Q2"}'
+                            name="score">
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <input type="text" value="{{ row.q3_score }}"
+                            class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-center"
+                            hx-post="{% url 'save_grade' %}" hx-trigger="change" hx-swap="none"
+                            hx-vals='{"student_id": "{{ student.id }}", "subject_id": "{{ row.subject.id }}", "term": "Q3"}'
+                            name="score">
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <input type="text" value="{{ row.q4_score }}"
+                            class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-center"
+                            hx-post="{% url 'save_grade' %}" hx-trigger="change" hx-swap="none"
+                            hx-vals='{"student_id": "{{ student.id }}", "subject_id": "{{ row.subject.id }}", "term": "Q4"}'
+                            name="score">
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center italic">
+                        No subjects found. Please add subjects in Settings.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Add event listener to inputs to update hx-vals dynamically before request
+    document.addEventListener('htmx:configRequest', function (evt) {
+        if (evt.target.tagName === 'INPUT' && evt.target.hasAttribute('hx-vals')) {
+            // Because 'this.value' in hx-vals string is evaluated only once on render, 
+            // we need to make sure the current value is sent. 
+            // Actually, hx-vals with 'js:' prefix or using hx-include is better for dynamic values.
+            // BUT, a simpler way for individual inputs:
+            // Just use name="score" and include other data in hidden inputs? No, that's messy for a grid.
+
+            // Correction: 'js:{"score": this.value}' works if supported, but standard hx-vals JSON string literal
+            // doesn't dynamically update 'this.value'.
+
+            // Strategy: Use hx-vals='js:{...}' or update it on change manually. 
+            // Let's use the hx-vals='js:...' format which is supported by htmx.
+        }
+    });
+</script>
+{% endblock %}

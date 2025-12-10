@@ -131,3 +131,15 @@ class WorkSample(models.Model):
     @property
     def is_pdf(self):
         return self.file.name.lower().endswith('.pdf')
+
+class Grade(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='grades')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='grades')
+    term = models.CharField(max_length=2, choices=[('Q1', 'Q1'), ('Q2', 'Q2'), ('Q3', 'Q3'), ('Q4', 'Q4')])
+    score = models.CharField(max_length=5)
+
+    class Meta:
+        unique_together = ['student', 'subject', 'term']
+
+    def __str__(self):
+        return f"{self.student.name} - {self.subject.name} - {self.term}: {self.score}"

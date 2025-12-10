@@ -30,7 +30,7 @@
     <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
         <h2 class="text-xl font-bold text-gray-800 mb-4">Reports</h2>
         <div class="flex flex-wrap gap-4">
-            <button type="button"
+            <a href="{% url 'gradebook' students.0.id %}"
                 class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm font-medium">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -38,7 +38,7 @@
                     </path>
                 </svg>
                 Report Card
-            </button>
+            </a>
             <button type="button" onclick="document.getElementById('audit-report-modal').classList.remove('hidden')"
                 class="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition shadow-sm font-medium">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,7 +150,14 @@
                         <div
                             class="sticky top-0 bg-gray-100 px-4 py-2 font-bold text-gray-700 border-b flex justify-between items-center z-10">
                             <span>{{ date_group.grouper|date:"l, F j, Y" }}</span>
-                            <span class="text-xs font-normal text-gray-500">{{ date_group.list|length }} {% if date_group.list|length == 1 %}Entry{% else %}Entries{% endif %}</span>
+                            <span class="text-xs font-normal text-gray-500">
+                                {{ date_group.list|length }}
+                                {% if date_group.list|length == 1 %}
+                                Entry
+                                {% else %}
+                                Entries
+                                {% endif %}
+                            </span>
                         </div>
 
                         <ul class="divide-y divide-gray-100">
@@ -195,8 +202,12 @@
                                     <!-- Actions -->
                                     <div class="flex items-center space-x-1">
                                         <!-- Edit Icon -->
-                                        <button type="button"
-                                            onclick="editDay('{{ day.id }}', '{{ day.student.id }}', '{{ day.date|date:'Y-m-d' }}', '{{ day.notes|escapejs }}', [{% for s in day.subjects.all %}'{{ s.display_name|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}])"
+                                        <button type="button" data-id="{{ day.id }}"
+                                            data-student-id="{{ day.student.id }}"
+                                            data-date="{{ day.date|date:'Y-m-d' }}"
+                                            data-notes="{{ day.notes|default:'' }}"
+                                            data-subjects='[{% for s in day.subjects.all %}"{{ s.display_name|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}]'
+                                            onclick="openEditDayModal(this)"
                                             class="text-gray-400 hover:text-blue-600 p-1" title="Edit">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -432,6 +443,16 @@
         // Pass student_subjects_map from Django to JS
         const studentSubjectsMapRaw = document.getElementById('student-subjects-data').textContent;
         const studentSubjectsMap = JSON.parse(studentSubjectsMapRaw);
+
+        function openEditDayModal(btn) {
+            const dayId = btn.dataset.id;
+            const studentId = btn.dataset.studentId;
+            const date = btn.dataset.date;
+            const notes = btn.dataset.notes;
+            const subjects = JSON.parse(btn.dataset.subjects || '[]');
+
+            editDay(dayId, studentId, date, notes, subjects);
+        }
 
         function editDay(dayId, studentId, date, notes, completedSubjects) {
             document.getElementById('edit_day_id').value = dayId;

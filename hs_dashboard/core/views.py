@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from datetime import date
-from .models import Student, SchoolDay, Subject, WorkSample, GlobalSubject
+from .models import Student, SchoolDay, Subject, WorkSample, GlobalSubject, Grade
 from django.db.models import Count, Prefetch
 from django.http import HttpResponse, FileResponse
 from django.db import IntegrityError
@@ -904,3 +904,50 @@ def delete_work_sample(request, sample_id):
     if request.method == "POST":
         sample.delete()
     return redirect('dashboard')
+
+@login_required
+def save_grade(request):
+    if request.method == "POST":
+        student_id = request.POST.get('student_id')
+        subject_id = request.POST.get('subject_id')
+        term = request.POST.get('term')
+        score = request.POST.get('score')
+        
+        # Verify student belongs to user
+        student = get_object_or_404(Student, id=student_id, user=request.user)
+        subject = get_object_or_404(Subject, id=subject_id, student=student)
+        
+        if term and score:
+            Grade.objects.update_or_create(
+                student=student,
+                subject=subject,
+                term=term,
+                defaults={'score': score}
+            )
+            
+        return HttpResponse("")
+    return HttpResponse(status=400)
+
+@login_required
+def gradebook_view(request, student_id):
+    student = get_object_or_404(Student, id=student_id, user=request.user)
+    subjects = student.subjects.all().order_by('name', 'global_subject__name')
+    grades = Grade.objects.filter(student=student)
+    
+    # Organize grades for quick lookup: {(subject_id, term): score}
+    grade_map = {(g.subject_id, g.term): g.score for g in grades}
+    
+    grade_rows = []
+    for subject in subjects:
+        grade_rows.append({
+            'subject': subject,
+            'q1_score': grade_map.get((subject.id, 'Q1'), ''),
+            'q2_score': grade_map.get((subject.id, 'Q2'), ''),
+            'q3_score': grade_map.get((subject.id, 'Q3'), ''),
+            'q4_score': grade_map.get((subject.id, 'Q4'), ''),
+        })
+        
+    return render(request, 'core/gradebook.html', {
+        'student': student,
+        'grade_rows': grade_rows,
+    })
