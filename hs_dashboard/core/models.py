@@ -57,6 +57,12 @@ class Student(models.Model):
     
     academic_year_start_month = models.PositiveSmallIntegerField(default=8, help_text="Start month (1-12)")
     academic_year_end_month = models.PositiveSmallIntegerField(default=7, help_text="End month (1-12)")
+    
+    GRADING_SYSTEM_CHOICES = [
+        ('quarters', 'Quarters'),
+        ('semesters', 'Semesters'),
+    ]
+    grading_system = models.CharField(max_length=20, choices=GRADING_SYSTEM_CHOICES, default='quarters')
 
     def __str__(self):
         if self.grade_level == 'Other' and self.custom_grade_level:
@@ -135,7 +141,10 @@ class WorkSample(models.Model):
 class Grade(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='grades')
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='grades')
-    term = models.CharField(max_length=2, choices=[('Q1', 'Q1'), ('Q2', 'Q2'), ('Q3', 'Q3'), ('Q4', 'Q4')])
+    term = models.CharField(max_length=2, choices=[
+        ('Q1', 'Q1'), ('Q2', 'Q2'), ('Q3', 'Q3'), ('Q4', 'Q4'),
+        ('S1', 'Semester 1'), ('S2', 'Semester 2')
+    ])
     score = models.CharField(max_length=5)
 
     class Meta:

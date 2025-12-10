@@ -25,22 +25,12 @@
                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Subject
                     </th>
+                    {% for term in terms %}
                     <th scope="col"
                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                        Q1
+                        {{ term }}
                     </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                        Q2
-                    </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                        Q3
-                    </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                        Q4
-                    </th>
+                    {% endfor %}
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -49,38 +39,20 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {{ row.subject.display_name }}
                     </td>
+                    {% for cell in row.cells %}
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <input type="text" value="{{ row.q1_score }}"
+                        <input type="text" value="{{ cell.score }}"
                             class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-center"
                             hx-post="{% url 'save_grade' %}" hx-trigger="change" hx-swap="none"
-                            hx-vals='{"student_id": "{{ student.id }}", "subject_id": "{{ row.subject.id }}", "term": "Q1"}'
+                            hx-vals='{"student_id": "{{ student.id }}", "subject_id": "{{ row.subject.id }}", "term": "{{ cell.term }}"}'
                             name="score">
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <input type="text" value="{{ row.q2_score }}"
-                            class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-center"
-                            hx-post="{% url 'save_grade' %}" hx-trigger="change" hx-swap="none"
-                            hx-vals='{"student_id": "{{ student.id }}", "subject_id": "{{ row.subject.id }}", "term": "Q2"}'
-                            name="score">
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <input type="text" value="{{ row.q3_score }}"
-                            class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-center"
-                            hx-post="{% url 'save_grade' %}" hx-trigger="change" hx-swap="none"
-                            hx-vals='{"student_id": "{{ student.id }}", "subject_id": "{{ row.subject.id }}", "term": "Q3"}'
-                            name="score">
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <input type="text" value="{{ row.q4_score }}"
-                            class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md text-center"
-                            hx-post="{% url 'save_grade' %}" hx-trigger="change" hx-swap="none"
-                            hx-vals='{"student_id": "{{ student.id }}", "subject_id": "{{ row.subject.id }}", "term": "Q4"}'
-                            name="score">
-                    </td>
+                    {% endfor %}
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center italic">
+                    <td colspan="{{ terms|length|add:'1' }}"
+                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center italic">
                         No subjects found. Please add subjects in Settings.
                     </td>
                 </tr>

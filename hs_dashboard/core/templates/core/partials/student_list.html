@@ -1,3 +1,4 @@
+{% load core_extras %}
 {% if students %}
 <div class="overflow-x-auto">
     <table class="min-w-full leading-normal">
@@ -47,7 +48,12 @@
                 </td>
                 <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm flex items-center space-x-2">
                     <button type="button"
-                        onclick="var row = document.getElementById('edit-row-{{ student.id }}'); row.style.display = row.style.display === 'none' ? 'table-row' : 'none';"
+                        onclick="document.getElementById('edit-row-{{ student.id }}').style.display = 'table-row'; openEditStudentModal(this)"
+                        data-id="{{ student.id }}" data-name="{{ student.name }}" data-grade="{{ student.grade_level }}"
+                        data-custom-grade="{{ student.custom_grade_level }}"
+                        data-grading-system="{{ student.grading_system }}"
+                        data-start="{{ student.academic_year_start_month }}"
+                        data-end="{{ student.academic_year_end_month }}"
                         class="text-blue-600 hover:text-blue-900 font-semibold">Edit</button>
 
                     <button type="button" hx-post="{% url 'delete_student' student.id %}"
@@ -118,7 +124,8 @@
                                     onchange="toggleInlineCustomGrade({{ student.id }})"
                                     class="shadow border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm">
                                     {% for code, name in grade_choices %}
-                                    <option value="{{ code }}" {% if student.grade_level == code %}selected{% endif %}>{{ name }}</option>
+                                    <option value="{{ code }}" {% if student.grade_level|eq:code %}selected{% endif %}>
+                                        {{ name }}</option>
                                     {% endfor %}
                                 </select>
                                 <div id="custom_grade_container_{{ student.id }}" class="mt-2"
@@ -133,68 +140,46 @@
 
                         <div class="grid grid-cols-2 gap-4 mb-3">
                             <div>
+                                <label class="block text-gray-700 text-xs font-bold mb-1">Grading System</label>
+                                <select name="grading_system" id="grading_system_{{ student.id }}"
+                                    class="shadow border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm">
+                                    {% if student.grading_system|eq:'quarters' %}
+                                    <option value="quarters" selected>Quarters (Q1-Q4)</option>
+                                    <option value="semesters">Semesters (S1, S2)</option>
+                                    {% else %}
+                                    <option value="quarters">Quarters (Q1-Q4)</option>
+                                    <option value="semesters" selected>Semesters (S1, S2)</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                            <div></div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 mb-3">
+                            <div>
                                 <label class="block text-gray-700 text-xs font-bold mb-1">Academic Year Start</label>
                                 <select name="academic_year_start_month" id="academic_year_start_month_{{ student.id }}"
                                     class="shadow border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm">
-                                    <option value="1" {% if student.academic_year_start_month == 1 %}selected{% endif %}>
-                                        January</option>
-                                    <option value="2" {% if student.academic_year_start_month == 2 %}selected{% endif %}>
-                                        February</option>
-                                    <option value="3" {% if student.academic_year_start_month == 3 %}selected{% endif %}>
-                                        March
-                                    </option>
-                                    <option value="4" {% if student.academic_year_start_month == 4 %}selected{% endif %}>
-                                        April
-                                    </option>
-                                    <option value="5" {% if student.academic_year_start_month == 5 %}selected{% endif %}>
-                                        May
-                                    </option>
-                                    <option value="6" {% if student.academic_year_start_month == 6 %}selected{% endif %}>
-                                        June
-                                    </option>
-                                    <option value="7" {% if student.academic_year_start_month == 7 %}selected{% endif %}>
-                                        July
-                                    </option>
-                                    <option value="8" {% if student.academic_year_start_month == 8 %}selected{% endif %}>
-                                        August</option>
-                                    <option value="9" {% if student.academic_year_start_month == 9 %}selected{% endif %}>
-                                        September</option>
-                                    <option value="10" {% if student.academic_year_start_month == 10 %}selected{% endif %}>
-                                        October</option>
-                                    <option value="11" {% if student.academic_year_start_month == 11 %}selected{% endif %}>
-                                        November</option>
-                                    <option value="12" {% if student.academic_year_start_month == 12 %}selected{% endif %}>
-                                        December</option>
+                                    {% for month_val, month_name in months %}
+                                    {% if student.academic_year_start_month|eq:month_val %}
+                                    <option value="{{ month_val }}" selected>{{ month_name }}</option>
+                                    {% else %}
+                                    <option value="{{ month_val }}">{{ month_name }}</option>
+                                    {% endif %}
+                                    {% endfor %}
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-gray-700 text-xs font-bold mb-1">Academic Year End</label>
                                 <select name="academic_year_end_month" id="academic_year_end_month_{{ student.id }}"
                                     class="shadow border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm">
-                                    <option value="1" {% if student.academic_year_end_month == 1 %}selected{% endif %}>
-                                        January</option>
-                                    <option value="2" {% if student.academic_year_end_month == 2 %}selected{% endif %}>
-                                        February</option>
-                                    <option value="3" {% if student.academic_year_end_month == 3 %}selected{% endif %}>
-                                        March</option>
-                                    <option value="4" {% if student.academic_year_end_month == 4 %}selected{% endif %}>
-                                        April</option>
-                                    <option value="5" {% if student.academic_year_end_month == 5 %}selected{% endif %}>May
-                                    </option>
-                                    <option value="6" {% if student.academic_year_end_month == 6 %}selected{% endif %}>
-                                        June</option>
-                                    <option value="7" {% if student.academic_year_end_month == 7 %}selected{% endif %}>
-                                        July</option>
-                                    <option value="8" {% if student.academic_year_end_month == 8 %}selected{% endif %}>
-                                        August</option>
-                                    <option value="9" {% if student.academic_year_end_month == 9 %}selected{% endif %}>
-                                        September</option>
-                                    <option value="10" {% if student.academic_year_end_month == 10 %}selected{% endif %}>
-                                        October</option>
-                                    <option value="11" {% if student.academic_year_end_month == 11 %}selected{% endif %}>
-                                        November</option>
-                                    <option value="12" {% if student.academic_year_end_month == 12 %}selected{% endif %}>
-                                        December</option>
+                                    {% for month_val, month_name in months %}
+                                    {% if student.academic_year_end_month|eq:month_val %}
+                                    <option value="{{ month_val }}" selected>{{ month_name }}</option>
+                                    {% else %}
+                                    <option value="{{ month_val }}">{{ month_name }}</option>
+                                    {% endif %}
+                                    {% endfor %}
                                 </select>
                             </div>
                         </div>

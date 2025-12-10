@@ -31,6 +31,7 @@
 
         <form method="post" action="{% url 'update_family_settings' %}" class="w-full max-w-lg">
             {% csrf_token %}
+            {% load core_extras %}
 
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="association_id">
@@ -42,9 +43,15 @@
                         <option value="">No Association Selected</option>
 
                         {% for assoc in associations %}
-                        <option value="{{ assoc.id }}" {% if user.profile.association.id == assoc.id %}selected{% endif %}>
-                            {{ assoc.name }} (Required Days: {{ assoc.required_days }})
+                        {% with is_selected=user.profile.association.id|eq:assoc.id %}
+                        {% if is_selected %}
+                        <option value="{{ assoc.id }}" selected>{{ assoc.name }} (Required Days: {{ assoc.required_days
+                            }})</option>
+                        {% else %}
+                        <option value="{{ assoc.id }}">{{ assoc.name }} (Required Days: {{ assoc.required_days }})
                         </option>
+                        {% endif %}
+                        {% endwith %}
                         {% endfor %}
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
@@ -111,6 +118,18 @@
                 </select>
             </div>
 
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="grading_system">
+                    Grading System
+                </label>
+                <select
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="grading_system" name="grading_system">
+                    <option value="quarters">Quarters (Q1-Q4)</option>
+                    <option value="semesters">Semesters (S1, S2)</option>
+                </select>
+            </div>
+
             <div class="mb-6" id="custom_grade_container" style="display: none;">
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="custom_grade_level">
                     Custom Grade Level
@@ -125,54 +144,36 @@
                     <label class="block text-gray-700 text-xs font-bold mb-1">Academic Year Start</label>
                     <select name="academic_year_start_month"
                         class="shadow border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm">
-                        <option value="1">January
-                        </option>
-                        <option value="2">February
-                        </option>
-                        <option value="3">March
-                        </option>
-                        <option value="4">April
-                        </option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
                         <option value="5">May</option>
-                        <option value="6">June
-                        </option>
-                        <option value="7">July
-                        </option>
-                        <option value="8">August
-                        </option>
-                        <option value="9">September
-                        </option>
-                        <option value="10">October
-                        </option>
-                        <option value="11">November
-                        </option>
-                        <option value="12">December
-                        </option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-gray-700 text-xs font-bold mb-1">Academic Year End</label>
                     <select name="academic_year_end_month"
                         class="shadow border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm">
-                        <option value="1">January
-                        </option>
-                        <option value="2">February
-                        </option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
                         <option value="3">March</option>
                         <option value="4">April</option>
                         <option value="5">May</option>
                         <option value="6">June</option>
                         <option value="7">July</option>
-                        <option value="8">August
-                        </option>
-                        <option value="9">September
-                        </option>
-                        <option value="10">October
-                        </option>
-                        <option value="11">November
-                        </option>
-                        <option value="12">December
-                        </option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
                     </select>
                 </div>
             </div>
@@ -240,25 +241,22 @@
         const name = button.dataset.name;
         const grade = button.dataset.grade;
         const customGrade = button.dataset.customGrade;
-        const trackingMode = button.dataset.tracking;
+        const gradingSystem = button.dataset.gradingSystem;
         const startYear = button.dataset.start;
         const endYear = button.dataset.end;
 
-        document.getElementById('edit_student_id').value = id;
-        document.getElementById('edit_name').value = name;
-        document.getElementById('edit_grade_level').value = grade;
-        document.getElementById('edit_custom_grade_level').value = customGrade;
-        document.getElementById('edit_tracking_mode').value = trackingMode || 'attendance';
-        document.getElementById('edit_academic_year_start').value = startYear || '';
-        document.getElementById('edit_academic_year_end').value = endYear || '';
+        document.getElementById('student_id').value = id; // Fixed ID map
+        document.getElementById('name').value = name;
+        document.getElementById('grade_level').value = grade;
+        document.getElementById('custom_grade_level').value = customGrade;
+        document.getElementById('grading_system').value = gradingSystem || 'quarters';
+        document.getElementById('academic_year_start_month').value = startYear || '8';
+        document.getElementById('academic_year_end_month').value = endYear || '7';
 
-        toggleCustomGradeEdit(); // Set initial state
-        document.getElementById('editStudentModal').classList.remove('hidden');
-    }
+        document.getElementById('form-title').innerText = 'Edit Student';
+        document.getElementById('submit-btn').innerText = 'Save Changes';
 
-    function editStudent(id, name, grade, customGrade, trackingMode, startYear, endYear) {
-        // Legacy function kept just in case, or removed.
-        // Replaced by openEditStudentModal
+        toggleCustomGrade();
     }
 
     function resetForm() {
@@ -268,6 +266,7 @@
         document.getElementById('name').value = '';
         document.getElementById('grade_level').value = '1st Grade';
         document.getElementById('custom_grade_level').value = '';
+        document.getElementById('grading_system').value = 'quarters';
         document.getElementById('academic_year_start_month').value = '8';
         document.getElementById('academic_year_end_month').value = '7';
         toggleCustomGrade();

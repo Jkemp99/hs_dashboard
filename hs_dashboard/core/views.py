@@ -213,11 +213,14 @@ def add_edit_student(request):
         academic_year_end_month = request.POST.get('academic_year_end_month')
         student_id = request.POST.get('student_id')
         
+        grading_system = request.POST.get('grading_system', 'quarters')
+        
         if student_id:
             student = get_object_or_404(Student, id=student_id, user=request.user)
             student.name = name
             student.grade_level = grade_level
             student.custom_grade_level = custom_grade
+            student.grading_system = grading_system
 
             if academic_year_start_month:
                 student.academic_year_start_month = int(academic_year_start_month)
@@ -226,12 +229,17 @@ def add_edit_student(request):
             student.save()
         else:
             user = request.user
-            student = Student(user=user, name=name, grade_level=grade_level, custom_grade_level=custom_grade)
+            student = Student(
+                user=user, 
+                name=name, 
+                grade_level=grade_level, 
+                custom_grade_level=custom_grade,
+                grading_system=grading_system
+            )
             if academic_year_start_month:
                 student.academic_year_start_month = int(academic_year_start_month)
             if academic_year_end_month:
                 student.academic_year_end_month = int(academic_year_end_month)
-            student.save()
             student.save()
     
     # HTMX: Return updated student list
@@ -241,10 +249,15 @@ def add_edit_student(request):
         
     global_subjects = GlobalSubject.objects.all()
     
+    # Month choices for dropdowns
+    import calendar as cal_module
+    months = [(i, cal_module.month_name[i]) for i in range(1, 13)]
+    
     return render(request, 'core/partials/student_list.html', {
         'students': students,
         'grade_choices': Student.GRADE_CHOICES,
         'global_subjects': global_subjects,
+        'months': months,
     })
 
 @login_required
@@ -428,6 +441,10 @@ def settings_view(request):
     # Get all GlobalSubjects for the subject dropdown
     global_subjects = GlobalSubject.objects.all()
 
+    # Month choices for dropdowns
+    import calendar as cal_module
+    months = [(i, cal_module.month_name[i]) for i in range(1, 13)]
+
     return render(request, 'core/settings.html', {
         'students': students, 
         'grade_choices': Student.GRADE_CHOICES,
@@ -442,6 +459,7 @@ def settings_view(request):
         'next_year': next_year,
         'associations': associations,
         'global_subjects': global_subjects,
+        'months': months,
     })
 
 @login_required
@@ -636,10 +654,15 @@ def delete_student(request, student_id):
         
     global_subjects = GlobalSubject.objects.all()
     
+    # Month choices for dropdowns
+    import calendar as cal_module
+    months = [(i, cal_module.month_name[i]) for i in range(1, 13)]
+    
     return render(request, 'core/partials/student_list.html', {
         'students': students,
         'grade_choices': Student.GRADE_CHOICES,
         'global_subjects': global_subjects,
+        'months': months,
     })
 
 # PDF Imports
@@ -934,20 +957,31 @@ def gradebook_view(request, student_id):
     subjects = student.subjects.all().order_by('name', 'global_subject__name')
     grades = Grade.objects.filter(student=student)
     
+    # Define terms based on student setting
+    if student.grading_system == 'semesters':
+        terms = ['S1', 'S2']
+    else:
+        terms = ['Q1', 'Q2', 'Q3', 'Q4']
+
     # Organize grades for quick lookup: {(subject_id, term): score}
     grade_map = {(g.subject_id, g.term): g.score for g in grades}
     
     grade_rows = []
     for subject in subjects:
+        cells = []
+        for term in terms:
+            cells.append({
+                'term': term,
+                'score': grade_map.get((subject.id, term), '')
+            })
+            
         grade_rows.append({
             'subject': subject,
-            'q1_score': grade_map.get((subject.id, 'Q1'), ''),
-            'q2_score': grade_map.get((subject.id, 'Q2'), ''),
-            'q3_score': grade_map.get((subject.id, 'Q3'), ''),
-            'q4_score': grade_map.get((subject.id, 'Q4'), ''),
+            'cells': cells
         })
         
     return render(request, 'core/gradebook.html', {
         'student': student,
         'grade_rows': grade_rows,
+        'terms': terms,
     })
