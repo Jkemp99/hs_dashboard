@@ -959,7 +959,7 @@ def gradebook_view(request, student_id):
     
     # Define terms based on student setting
     if student.grading_system == 'semesters':
-        terms = ['S1', 'S2']
+        terms = ['Fall', 'Spring']
     else:
         terms = ['Q1', 'Q2', 'Q3', 'Q4']
 

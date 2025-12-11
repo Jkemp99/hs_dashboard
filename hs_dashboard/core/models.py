@@ -141,9 +141,9 @@ class WorkSample(models.Model):
 class Grade(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='grades')
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='grades')
-    term = models.CharField(max_length=2, choices=[
+    term = models.CharField(max_length=10, choices=[
         ('Q1', 'Q1'), ('Q2', 'Q2'), ('Q3', 'Q3'), ('Q4', 'Q4'),
-        ('S1', 'Semester 1'), ('S2', 'Semester 2')
+        ('Fall', 'Fall'), ('Spring', 'Spring')
     ])
     score = models.CharField(max_length=5)
 

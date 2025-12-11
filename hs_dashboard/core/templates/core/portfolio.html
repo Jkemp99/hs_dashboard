@@ -689,7 +689,9 @@
                                 onchange="updateTermOptions(this.value)"
                                 class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                                 {% for student in students %}
-                                <option value="{{ student.id }}" data-grading-system="{{ student.grading_system }}">{{ student.name }}</option>
+                                <option value="{{ student.id }}" data-grading-system="{{ student.grading_system }}">
+                                    {{ student.name }}
+                                </option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -708,7 +710,8 @@
                         </div>
 
                         <div class="mb-6">
-                            <label class="block text-gray-700 text-sm font-bold mb-2">Term</label>
+                            <label id="report-card-term-label"
+                                class="block text-gray-700 text-sm font-bold mb-2">Term</label>
                             <select name="term" id="report-card-term-select"
                                 class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                                 <!-- Options populated by JavaScript based on student's grading system -->
@@ -739,15 +742,18 @@
             const studentSelect = document.getElementById('report-card-student-select');
             const selectedOption = studentSelect.options[studentSelect.selectedIndex];
             const gradingSystem = selectedOption.getAttribute('data-grading-system') || 'quarters';
+            const termLabel = document.getElementById('report-card-term-label');
 
             termSelect.innerHTML = '';
 
             if (gradingSystem === 'semesters') {
+                termLabel.innerText = 'Semester';
                 termSelect.innerHTML = `
-                    <option value="S1">Semester 1</option>
-                    <option value="S2">Semester 2</option>
+                    <option value="Fall">Fall</option>
+                    <option value="Spring">Spring</option>
                 `;
             } else {
+                termLabel.innerText = 'Term';
                 termSelect.innerHTML = `
                     <option value="Q1">Quarter 1</option>
                     <option value="Q2">Quarter 2</option>
